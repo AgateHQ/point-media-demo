@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
-// Base path matches the GitHub Pages project URL (https://agatehq.github.io/point-media-demo/)
-export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/point-media-demo/' : '/',
-}));
+// The GitHub Pages custom domain serves this project from the domain root.
+export default defineConfig({
+  base: '/',
+});
