@@ -49,6 +49,7 @@
 }
 
 /* Simplified publication chrome. */
+.site-header{position:sticky;top:0;z-index:20;background:#141513}
 .wallet-button .axate-mark{width:18px;height:17px;color:#fff;border-left:1px solid #ffffff25;padding-left:9px;box-sizing:content-box}
 .cover-date{justify-content:flex-end}
 .stage{gap:0}
@@ -94,6 +95,18 @@
 #toast{transform:translate(-50%,15px) scale(.96);font-weight:600;transition:opacity .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
 #toast.anchored{bottom:auto}
 #toast.visible{transform:translate(-50%,0) scale(1)}
+
+/* Wallet balance changes should feel attached to the wallet, not the article body. */
+.wallet-button{position:relative;overflow:visible}
+.wallet-button.wallet-spent{background:#1b201b;border-color:#1bb58055;box-shadow:0 0 0 1px #1bb58022,0 12px 35px #0004}
+.wallet-button.wallet-received{background:#203026;border-color:#76e2b266;box-shadow:0 0 0 1px #76e2b233,0 12px 35px #0004}
+.wallet-button.wallet-spent>span:first-of-type{animation:wallet-balance-spent .62s cubic-bezier(.2,.85,.25,1)}
+.wallet-button.wallet-received>span:first-of-type{animation:wallet-balance-received .62s cubic-bezier(.2,.85,.25,1)}
+.wallet-delta{position:absolute;right:22px;top:-25px;z-index:3;padding:5px 8px;border-radius:999px;background:#f7f7ef;color:#122017;font-size:11px;font-weight:800;line-height:1;box-shadow:0 10px 28px #0008;animation:wallet-delta-float 1.05s cubic-bezier(.16,1,.3,1) both;white-space:nowrap}
+.wallet-received .wallet-delta{background:#78e5b7;color:#05180f}
+@keyframes wallet-balance-spent{0%{transform:translateY(0) scale(1);color:inherit}34%{transform:translateY(2px) scale(.88);color:#f7f7ef}72%{transform:translateY(-1px) scale(1.08);color:#9ff0cb}100%{transform:translateY(0) scale(1);color:inherit}}
+@keyframes wallet-balance-received{0%{transform:scale(1);color:inherit}45%{transform:scale(1.16);color:#a2ffd9;text-shadow:0 0 22px #1bb580}100%{transform:scale(1);color:inherit;text-shadow:none}}
+@keyframes wallet-delta-float{0%{opacity:0;transform:translateY(8px) scale(.88)}18%{opacity:1;transform:translateY(0) scale(1)}74%{opacity:1;transform:translateY(-5px) scale(1)}100%{opacity:0;transform:translateY(-13px) scale(.96)}}
 
 /* Wallet reveal: it unfolds from the header control and settles into place. */
 dialog.wallet-sheet{position:fixed;inset:78px max(20px,calc((100vw - 1440px)/2 + 56px)) auto auto;margin:0;width:min(410px,calc(100vw - 40px));max-height:calc(100svh - 100px);overflow:auto;transform-origin:calc(100% - 46px) 0;animation:wallet-reveal .58s cubic-bezier(.16,1,.3,1) both;box-shadow:0 34px 100px #000b,0 0 0 1px #ffffff0a}
@@ -166,4 +179,23 @@ dialog.wallet-sheet.closing::backdrop{animation:wallet-backdrop-out .34s ease-in
   @keyframes wallet-mobile-handle{0%{opacity:0;transform:translate3d(0,10px,0) scaleX(.3)}60%{opacity:1;transform:translate3d(0,-2px,0) scaleX(1.45)}100%{opacity:1;transform:translate3d(0,0,0) scaleX(1)}}
   @keyframes wallet-mobile-sweep{0%{opacity:0;transform:scaleX(0)}52%{opacity:1;transform:scaleX(1)}100%{opacity:.38;transform:scaleX(.55)}}
   @keyframes wallet-mobile-backdrop{from{background:#06090600;backdrop-filter:blur(0)}to{background:#060906c7;backdrop-filter:blur(7px)}}
+}
+
+/* PWA and phone-install polish. */
+html{background:#141513}
+body{min-height:100svh;overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}
+.install-button{border:1px solid #ffffff24!important;border-radius:999px;background:#ffffff0c!important;color:#f0f2e8!important;padding:9px 13px!important;font-weight:700}
+.install-button:hover{background:#ffffff18!important}
+.install-steps{display:grid;grid-template-columns:34px 1fr;gap:12px 14px;margin:26px 0 24px;padding:20px 0;border-top:1px solid #ffffff25;border-bottom:1px solid #ffffff25}
+.install-steps span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#1bb580;color:#05180f;font-weight:800;font-size:13px}
+.install-steps p{margin:2px 0 0;color:#dfe2d6}
+@media (display-mode: standalone){
+  a,button{-webkit-touch-callout:none}
+}
+@media(max-width:720px){
+  .site-header{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+  .site-footer{padding-bottom:max(18px,calc(env(safe-area-inset-bottom) + 12px))}
+  dialog{padding-bottom:max(32px,calc(env(safe-area-inset-bottom) + 24px))}
+  #toast{bottom:max(24px,calc(env(safe-area-inset-bottom) + 16px))}
+  .install-button{font-size:11px}
 }

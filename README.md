@@ -12,4 +12,10 @@ npm run dev
 npm run build
 npm run preview
 
-Vite + TypeScript; sessionStorage retains the demo state in the current tab. Reset demo restores the initial £1 balance. No payment service, backend, or account integration is used. Photography credits are in public/PHOTO-CREDITS.txt.
+## Phone demo
+
+This is configured as an installable PWA for easier demos.
+
+On iOS, open the hosted URL in Safari, tap Share, then Add to Home Screen. On Android, use the in-app Install app control or the browser's install prompt/menu.
+
+Vite + TypeScript; localStorage retains the demo state between launches, with sessionStorage as a fallback. Reset demo restores the initial £1 balance. No payment service, backend, or account integration is used. Photography credits are in public/PHOTO-CREDITS.txt.
