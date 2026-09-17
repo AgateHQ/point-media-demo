@@ -16,6 +16,6 @@ npm run preview
 
 This is configured as an installable PWA for easier demos.
 
-On iOS, open the hosted URL in Safari, tap Share, then Add to Home Screen. On Android, use the in-app Install app control or the browser's install prompt/menu.
+On iOS, open the hosted HTTPS URL in Safari, tap Share, then Add to Home Screen. On Android, use the in-app Install app control or the browser's install prompt/menu. The installed demo launches full screen, works after its first successful load, and keeps its state on the device.
 
 Vite + TypeScript; localStorage retains the demo state between launches, with sessionStorage as a fallback. Reset demo restores the initial £1 balance. No payment service, backend, or account integration is used. Photography credits are in public/PHOTO-CREDITS.txt.

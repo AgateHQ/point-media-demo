@@ -184,11 +184,14 @@ dialog.wallet-sheet.closing::backdrop{animation:wallet-backdrop-out .34s ease-in
 /* PWA and phone-install polish. */
 html{background:#141513}
 body{min-height:100svh;overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}
-.install-button{border:1px solid #ffffff24!important;border-radius:999px;background:#ffffff0c!important;color:#f0f2e8!important;padding:9px 13px!important;font-weight:700}
+.install-button{border:1px solid #ffffff24!important;border-radius:999px;background:#ffffff0c!important;color:#f0f2e8!important;padding:9px 13px!important;font-weight:700;display:inline-flex!important;align-items:center;gap:7px}
+.install-button svg{width:16px!important;height:16px!important;flex:0 0 auto}
 .install-button:hover{background:#ffffff18!important}
 .install-steps{display:grid;grid-template-columns:34px 1fr;gap:12px 14px;margin:26px 0 24px;padding:20px 0;border-top:1px solid #ffffff25;border-bottom:1px solid #ffffff25}
 .install-steps span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#1bb580;color:#05180f;font-weight:800;font-size:13px}
 .install-steps p{margin:2px 0 0;color:#dfe2d6}
+.share-icon{display:inline-block;width:18px;height:18px;vertical-align:-4px;margin-left:3px;color:#83dfbb}
+.install-result{margin:-8px 0 24px!important;color:#aeb4a7!important;font-size:13px!important;line-height:1.5!important}
 @media (display-mode: standalone){
   a,button{-webkit-touch-callout:none}
 }

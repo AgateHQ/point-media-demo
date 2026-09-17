@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axate-network-demo-v1';
+const CACHE_NAME = 'axate-network-demo-v2';
 const CORE_ASSETS = [
   '/',
   '/index.html',

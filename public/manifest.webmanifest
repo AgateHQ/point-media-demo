@@ -1,7 +1,9 @@
 {
   "name": "The Axate Network",
   "short_name": "Axate Demo",
+  "id": "/",
   "description": "Eight stories. One daily edition. Explore the Axate network.",
+  "lang": "en-GB",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,6 +12,14 @@
   "background_color": "#141513",
   "theme_color": "#141513",
   "categories": ["news", "magazines", "finance"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Read today's edition",
+      "short_name": "Read edition",
+      "url": "/"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",
