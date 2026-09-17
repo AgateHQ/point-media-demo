@@ -164,6 +164,8 @@ dialog.wallet-sheet.closing::backdrop{animation:wallet-backdrop-out .34s ease-in
 .wallet-sheet .balance-row strong{align-self:center}
 .wallet-top-up{grid-column:2;padding:7px 11px;border:1px solid #55c99c66;border-radius:5px;background:#1bb58016;color:#7ee0b8;font-size:11px;font-weight:700;white-space:nowrap}
 .wallet-top-up:hover{background:#1bb58028!important}
+.wallet-reset{display:block;margin:6px auto 0;padding:8px 10px;background:transparent;color:#8f9689;font-size:10px;line-height:1;letter-spacing:.4px;text-decoration:underline;text-decoration-color:#ffffff24;text-underline-offset:3px}
+.wallet-reset:hover{filter:none!important;color:#c8cec0;text-decoration-color:#ffffff55}
 .balance-bump{animation:balance-bump .55s cubic-bezier(.2,.85,.25,1)}
 @keyframes balance-bump{0%{transform:scale(1);text-shadow:none}38%{transform:scale(1.22) rotate(-2deg);color:#a2ffd9;text-shadow:0 0 24px #1bb580}100%{transform:scale(1);text-shadow:none}}
 
@@ -179,6 +181,7 @@ dialog.wallet-sheet.closing::backdrop{animation:wallet-backdrop-out .34s ease-in
   dialog.wallet-sheet[open]:not(.closing)>.balance-row{animation-delay:.4s}
   dialog.wallet-sheet[open]:not(.closing)>.price-row{animation-delay:.44s}
   dialog.wallet-sheet[open]:not(.closing)>.fine-print{animation-delay:.48s}
+  dialog.wallet-sheet[open]:not(.closing)>.wallet-reset{animation-delay:.52s}
   dialog.wallet-sheet.closing>*{animation:none}
   @keyframes wallet-reveal-mobile{0%{opacity:0;transform:translateY(110%) scale(.92);filter:blur(9px)}48%{opacity:1;transform:translateY(-25px) scale(.985);filter:blur(0)}66%{transform:translateY(10px) scale(1.008)}80%{transform:translateY(-5px) scale(.997)}91%{transform:translateY(2px)}100%{opacity:1;transform:none}}
   @keyframes wallet-content-rise{from{opacity:0;transform:translateY(22px) scale(.985);filter:blur(4px)}to{opacity:1;transform:none;filter:blur(0)}}
@@ -204,6 +207,7 @@ dialog.wallet-sheet.closing::backdrop{animation:wallet-backdrop-out .34s ease-in
   dialog.wallet-sheet[open]:not(.closing)>.balance-row{animation-delay:.44s}
   dialog.wallet-sheet[open]:not(.closing)>.price-row{animation-delay:.48s}
   dialog.wallet-sheet[open]:not(.closing)>.fine-print{animation-delay:.52s}
+  dialog.wallet-sheet[open]:not(.closing)>.wallet-reset{animation-delay:.56s}
   dialog.wallet-sheet.closing{animation:wallet-mobile-wow-out .3s cubic-bezier(.7,0,.84,0) both}
   dialog.wallet-sheet.closing::backdrop{animation:wallet-backdrop-out .3s ease-in both}
   dialog.wallet-sheet.closing>*{animation:none!important}
