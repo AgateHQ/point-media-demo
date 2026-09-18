@@ -217,6 +217,8 @@ dialog.wallet-sheet.closing::backdrop{animation:wallet-backdrop-out .34s ease-in
 /* PWA and phone-install polish. */
 html{background:#141513}
 body{min-height:100svh;overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}
+.reader{touch-action:pan-y;overscroll-behavior-x:contain}
+.gesture-cues{touch-action:none}
 .install-button{border:1px solid #ffffff24!important;border-radius:999px;background:#ffffff0c!important;color:#f0f2e8!important;padding:9px 13px!important;font-weight:700;display:inline-flex!important;align-items:center;gap:7px}
 .install-button svg{width:16px!important;height:16px!important;flex:0 0 auto}
 .install-button:hover{background:#ffffff18!important}

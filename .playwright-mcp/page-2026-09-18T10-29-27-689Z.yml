@@ -1,0 +1,35 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - button "Publication home" [ref=e4] [cursor=pointer]:
+        - generic [ref=e5]: the daily trail.
+      - button "£1.00 Axate" [ref=e6] [cursor=pointer]:
+        - generic [ref=e10]: £1.00
+        - img "Axate" [ref=e11]
+    - main [ref=e13]:
+      - region "Daily edition" [ref=e14]:
+        - img "London and the River Thames at dusk" [ref=e15]
+        - generic [ref=e17]: WED, 16 SEP 2026
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - text: THE BIG STORY
+            - generic [ref=e21]: 01 — 08
+          - heading [level=1] [ref=e22]:
+            - text: The cityis yours.
+            - emphasis [ref=e23]: Take it back.
+          - paragraph [ref=e24]: Less traffic. More living.A new idea for the streets we share.
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - generic [ref=e27]: ▥
+              - generic [ref=e28]: 8 stories. One daily edition.
+              - generic [ref=e29]: ~ 5 MIN
+            - button "Read today" [ref=e30] [cursor=pointer]
+            - generic [ref=e33]:
+              - text: Read the opening free. Full articles are 20p each.
+              - generic [ref=e34]:
+                - text: Powered by
+                - link "axate" [ref=e35] [cursor=pointer]:
+                  - /url: https://axate.com
+    - contentinfo [ref=e36]:
+      - button "Install app" [ref=e37] [cursor=pointer]
+  - status

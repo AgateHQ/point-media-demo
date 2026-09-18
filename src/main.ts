@@ -73,12 +73,19 @@ document.addEventListener('click',e=>{const button=(e.target as HTMLElement).clo
 sheet.addEventListener('click',e=>{if(e.target===sheet){const r=sheet.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeSheet();}});
 sheet.addEventListener('cancel',e=>{e.preventDefault();closeSheet();});
 document.addEventListener('keydown',e=>{if(sheet.open||state.screen!=='reader')return;if(e.key==='ArrowRight'){e.preventDefault();move(1);}if(e.key==='ArrowLeft'){e.preventDefault();move(-1);}});
-let swipeStart:{x:number;y:number;id:number;atTop:boolean}|null=null;
+let swipeStart:{x:number;y:number;id:number;atBottom:boolean}|null=null;
+let lastSwipeAt=0;
 function canStartSwipe(target:EventTarget|null){return (state.screen==='reader'||state.screen==='complete')&&!sheet.open&&target instanceof Element&&Boolean(target.closest('.reader'))&&!target.closest('button,a,input,select,textarea,dialog,.article-network-strip');}
-function readerIsAtTop(){const readerEl=document.querySelector<HTMLElement>('.reader');return window.scrollY<=4&&(!readerEl||readerEl.scrollTop<=4);}
-app.addEventListener('pointerdown',e=>{if(!canStartSwipe(e.target))return;swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,atTop:readerIsAtTop()};},{passive:true});
-app.addEventListener('pointerup',e=>{if(!swipeStart||e.pointerId!==swipeStart.id)return;const start=swipeStart;const dx=e.clientX-start.x,dy=e.clientY-start.y;swipeStart=null;if(state.screen==='complete'){if(dy < -85&&Math.abs(dy)>Math.abs(dx)*1.5)action('network');return;}if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.5){move(dx<0?1:-1);return;}if(start.atTop&&dy>85&&dy>Math.abs(dx)*1.5)action('network');},{passive:true});
+function readerIsAtBottom(){const readerEl=document.querySelector<HTMLElement>('.reader');const pageBottom=window.scrollY+window.innerHeight>=document.documentElement.scrollHeight-8;return pageBottom&&(!readerEl||readerEl.scrollTop+readerEl.clientHeight>=readerEl.scrollHeight-8);}
+function swipeIntent(dx:number,dy:number){const horizontalMin=Math.max(36,Math.min(56,window.innerWidth*.12));const verticalMin=Math.max(48,Math.min(68,window.innerHeight*.08));const absX=Math.abs(dx),absY=Math.abs(dy);if(absX>=horizontalMin&&absX>absY*1.12)return dx<0?'next':'prev';if(absY>=verticalMin&&absY>absX*1.12)return dy<0?'up':'down';return null;}
+function finishSwipe(start:{x:number;y:number;atBottom:boolean},x:number,y:number){const intent=swipeIntent(x-start.x,y-start.y);if(!intent)return;if(intent==='next'||intent==='prev'){move(intent==='next'?1:-1);lastSwipeAt=Date.now();return;}if(intent==='up'&&(state.screen==='complete'||start.atBottom)){action('network');lastSwipeAt=Date.now();}}
+app.addEventListener('pointerdown',e=>{if(!canStartSwipe(e.target))return;swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId,atBottom:readerIsAtBottom()};try{(e.target as Element).setPointerCapture?.(e.pointerId);}catch{}},{passive:true});
+app.addEventListener('pointerup',e=>{if(!swipeStart||e.pointerId!==swipeStart.id)return;const start=swipeStart;swipeStart=null;finishSwipe(start,e.clientX,e.clientY);},{passive:true});
 app.addEventListener('pointercancel',()=>{swipeStart=null;},{passive:true});
+let touchSwipeStart:{x:number;y:number;atBottom:boolean}|null=null;
+app.addEventListener('touchstart',e=>{if(Date.now()-lastSwipeAt<450||!canStartSwipe(e.target)||e.touches.length!==1)return;const touch=e.touches[0];touchSwipeStart={x:touch.clientX,y:touch.clientY,atBottom:readerIsAtBottom()};},{passive:true});
+app.addEventListener('touchend',e=>{if(!touchSwipeStart||Date.now()-lastSwipeAt<450)return;const touch=e.changedTouches[0];const start=touchSwipeStart;touchSwipeStart=null;if(touch)finishSwipe(start,touch.clientX,touch.clientY);},{passive:true});
+app.addEventListener('touchcancel',()=>{touchSwipeStart=null;},{passive:true});
 
 let unlockCleanup=()=>{};
 function setupScrollExpand(){unlockCleanup();const readerEl=document.querySelector<HTMLElement>('.reader')!;readerEl.querySelectorAll<HTMLImageElement>('img[data-load="fade"]').forEach((img:HTMLImageElement)=>{if(img.complete)img.classList.add('loaded');else img.addEventListener('load',()=>img.classList.add('loaded'),{once:true});});setupStoryVideo();setupScrollUnlock();}
