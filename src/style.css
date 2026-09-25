@@ -415,6 +415,8 @@ dialog.discover-sheet{position:fixed;inset:0;margin:0;width:100vw;max-width:none
 dialog.discover-sheet::backdrop{background:#030403;animation:wallet-backdrop-in .3s ease-out both}
 dialog.discover-sheet.closing{animation:discover-sheet-out .3s cubic-bezier(.7,0,.84,0) both}
 dialog.discover-sheet.closing::backdrop{animation:wallet-backdrop-out .3s ease-in both}
+dialog.discover-sheet.fade-to-edition{pointer-events:none;animation:discover-edition-fade .42s cubic-bezier(.22,.61,.36,1) both}
+dialog.discover-sheet.fade-to-edition::backdrop{animation:discover-edition-backdrop .42s ease-out both}
 .discover-chrome{position:absolute;z-index:30;top:max(22px,env(safe-area-inset-top));left:max(24px,env(safe-area-inset-left));right:max(24px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;pointer-events:none}
 .discover-chrome>span{padding:10px 13px;border:1px solid #ffffff55;background:#050605a8;backdrop-filter:blur(16px);font-size:10px;font-weight:800;line-height:1;letter-spacing:1.5px}
 .discover-chrome b{margin-left:8px;color:#ffffffa8;font-weight:600}
@@ -454,6 +456,8 @@ dialog.discover-sheet.closing::backdrop{animation:wallet-backdrop-out .3s ease-i
 @keyframes discover-card-left{to{opacity:0;transform:translate3d(-125vw,-3vh,0) rotate(-22deg) scale(.94)}}
 @keyframes discover-card-right{to{opacity:0;transform:translate3d(125vw,-3vh,0) rotate(22deg) scale(.94)}}
 @keyframes discover-card-enter{to{opacity:0;transform:translate3d(0,112vh,0) rotate(0) scale(.96)}}
+@keyframes discover-edition-fade{0%{opacity:1;transform:scale(1);filter:blur(0)}45%{opacity:.72;transform:scale(1.015);filter:blur(1px)}100%{opacity:0;transform:scale(1.045);filter:blur(7px)}}
+@keyframes discover-edition-backdrop{from{background:#030403}to{background:#03040300}}
 @media(max-width:900px){
   .header-full-title{display:none!important}
   .header-short-title{display:block!important;font-size:24px!important;letter-spacing:0!important}
