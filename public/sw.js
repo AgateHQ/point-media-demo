@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axate-network-demo-v2';
+const CACHE_NAME = 'axate-network-demo-v3';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -6,8 +6,7 @@ const CORE_ASSETS = [
   '/favicon.svg',
   '/icons/apple-touch-icon.png',
   '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/images/cover-main.jpg'
+  '/icons/icon-512.png'
 ];
 
 self.addEventListener('install', event => {
@@ -32,6 +31,20 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  // These URLs contain content hashes, so a cached response stays valid.
+  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/images/optimized/')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async cache => {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        const response = await fetch(request);
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      })
+    );
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(
