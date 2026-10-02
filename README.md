@@ -22,7 +22,13 @@ Svelte 5 + Vite + TypeScript; localStorage retains the demo state between launch
 
 ## Structure
 
-`src/App.svelte` composes the publication shell. The article reader, scroll unlock footer, discovery deck, wallet sheets, cover, and notifications live in `src/components/`. Shared reactive demo state and reading/payment actions are in `src/demo.svelte.ts`; publication and story helpers are in `src/data.ts`. `src/style.css` retains the publication themes.
+`src/App.svelte` composes the publication shell. The article reader, scroll unlock footer, discovery deck, wallet sheets, and notifications live in `src/components/`. Shared reactive demo state and reading/payment actions are in `src/demo.svelte.ts`; publication and story helpers are in `src/data.ts`. `src/style.css` retains the publication themes.
+
+The six publication names, taglines, and palettes are defined in `src/data.ts`. Wordmarks and icons use the SVGs in `public/newspaper-logos/`. The previous four publication IDs migrate to the new brands when saved state loads, keeping the wallet and article progress.
+
+Articles use a responsive newspaper layout with publication-specific headline fonts, paper colours, bylines, photo captions, and pull quotes. Swipe left or right to move between articles. The fixed 20p footer tracks reading progress through the 75% preview before opening the remaining text.
+
+Every publication opens directly on its first article. The masthead and First article button return there; older saved cover screens also resume on the first article.
 
 Wallet updates and article unlocking update the existing components. The reader remounts only when navigating to another story, publication, or screen. Existing saved progress uses the same storage key.
 

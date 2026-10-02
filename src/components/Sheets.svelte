@@ -1,7 +1,8 @@
 <script lang="ts">
   import { demo, selectPublication, topup, reset, isIos, isSafari, notify } from '../demo.svelte';
-  import { publications, initials, money } from '../data';
+  import { publications, money } from '../data';
   import Icon from './Icon.svelte';
+  import PublicationLogo from './PublicationLogo.svelte';
   let Discover = $state.raw<typeof import('./Discover.svelte').default | null>(null);
   let discoverLoading: Promise<void> | undefined;
   let sheet: HTMLDialogElement;
@@ -72,7 +73,7 @@
       <div class="network-sheet-publications">
         {#each publications as p (p.id)}
           <button class="network-sheet-publication" onclick={() => selectPublication(p.id)}>
-            <span class="pub-avatar-circle" class:current={p.id === demo.data.publication} style={`border-color:${p.brand};background:${p.color};color:${p.ink}`}>{initials(p.name)}</span>
+            <span class="pub-avatar-circle" class:current={p.id === demo.data.publication} style={`border-color:${p.brand};background:#ffffff`}><PublicationLogo publication={p} variant="icon" decorative /></span>
             <span class="network-sheet-copy"><strong>{p.name}</strong><small>{p.subtitle}</small></span><Icon />
           </button>
         {/each}
@@ -86,13 +87,8 @@
         <span>3</span><p>{isIos() ? 'Scroll down and choose Add to Home Screen, then tap Add.' : 'Confirm the install, then open Axate Demo from your Home Screen.'}</p>
       </div>
       <p class="install-result">It launches full screen and keeps your demo progress on this device.</p><button class="primary" onclick={close}>Got it <Icon /></button>
-    {:else if demo.sheet === 'touchline' || demo.sheet === 'afterhours'}
-      <span class="eyebrow">THE AXATE NETWORK · PREVIEW</span><h2>{demo.sheet === 'touchline' ? 'the offside times.' : 'the mirrorball'}</h2>
-      <p>{demo.sheet === 'touchline' ? 'For the stories behind the score. Players, people and the beautiful unpredictability of sport.' : 'Your backstage pass to music, film and the things everyone will be talking about tomorrow.'}</p>
-      <div class="preview-story"><span>SAMPLE STORY</span><h3>{demo.sheet === 'touchline' ? 'The club that belongs to its fans.' : 'Small rooms. Unforgettable nights.'}</h3></div>
-      <p class="fine-print">This is a preview of a fictional network title.</p><button class="primary" onclick={close}>Back to the Axate network <Icon /></button>
     {:else}
-      <span class="eyebrow">YOUR AXATE WALLET</span><h2>Small change.<br />Good stories.</h2><p>Your funds travel with you across the Axate network.</p>
+      <span class="eyebrow">YOUR AXATE WALLET</span><p>Your funds travel with you across the Axate network.</p>
       <div class="balance-row"><span>Balance</span><strong class:balance-bump={demo.walletChange.kind === 'received'}>{money(demo.data.balance)}</strong><button class="wallet-top-up" onclick={topup} aria-label="Top up 1 GBP">Top up £1</button></div>
       <div class="price-row"><span>Full articles</span><span>{unlockedCount} unlocked · {money(unlockedCount * 20)} paid</span></div>
       <div class="price-row"><span>Partner reward</span><span>{demo.data.reward ? '+10p received' : 'Available in this edition'}</span></div>

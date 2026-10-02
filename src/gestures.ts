@@ -1,4 +1,4 @@
-import { demo, move, openSheet, start } from './demo.svelte';
+import { demo, move, openSheet } from './demo.svelte';
 
 export function readerIsAtBottom() {
   const reader = document.querySelector<HTMLElement>('.reader');
@@ -16,12 +16,6 @@ export function readerGestures(node: HTMLElement) {
   const finish = (origin: Start, x: number, y: number) => {
     const dx = x - origin.x, dy = y - origin.y;
     const absX = Math.abs(dx), absY = Math.abs(dy);
-    if (demo.data.screen === 'cover') {
-      if (dy > Math.max(48, Math.min(68, window.innerHeight * .08)) && absY > absX * 1.12) {
-        start(); lastSwipeAt = Date.now();
-      }
-      return;
-    }
     if (demo.data.screen !== 'reader' && demo.data.screen !== 'complete') return;
     if (absX >= Math.max(36, Math.min(56, window.innerWidth * .12)) && absX > absY * 1.12) {
       move(dx < 0 ? 1 : -1); lastSwipeAt = Date.now();

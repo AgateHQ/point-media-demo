@@ -9,7 +9,7 @@
 <div class="completion">
   <div class="completion-top"><button class="completion-back" onclick={last} aria-label="Back to the last article"><Icon /><span>Last article</span></button><span>08 / 08</span></div>
   <div class="complete-symbol" style:background={pub.accent}>✓</div>
-  <span class="eyebrow">AND THAT'S THE POINT.</span>
+  <span class="eyebrow">THAT'S YOUR EDITION.</span>
   <h1>You're<br />up to date<span style:color={pub.accent}>.</span></h1>
   <p>Eight stories. A fresh perspective.<br />The rest of the day is yours.</p>
   <div class="stats"><div><strong>8 / 8</strong><span>STORIES READ</span></div><div><strong>{demo.data.reward ? '10p' : '0p'}</strong><span>REWARDS EARNED</span></div></div>

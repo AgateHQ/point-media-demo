@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { publications, stories, initials, storyVideos } from '../data';
+  import { publications, stories, storyVideos } from '../data';
   import imageAssets from '../image-assets.json';
   import { demo } from '../demo.svelte';
   import Icon from './Icon.svelte';
   import ResponsiveImage from './ResponsiveImage.svelte';
   import BackgroundVideo from './BackgroundVideo.svelte';
+  import PublicationLogo from './PublicationLogo.svelte';
   let { onclose, onenter }: { onclose: () => void; onenter: (id: string, motion?: 'down' | 'up') => void } = $props();
   let active = $derived(publications[demo.discoverIndex]);
   let outgoing = $state('');
@@ -113,12 +114,12 @@
     {@const feature = stories[p.storyOrder[0]]}
     <article class={`discover-card ${activeCard ? outgoing : ''}`} class:active={activeCard} class:dragging={activeCard && dragging}
       data-pub={p.id} aria-hidden={!activeCard}
-      style={`--rel:${rel};--abs-rel:${Math.abs(rel)};--pub-accent:${p.brand};--pub-bg:${p.color};--pub-ink:${p.ink};--pub-brand-ink:${p.brandInk};z-index:${activeCard ? 10 : 5 - Math.abs(rel)};--drag-x:${activeCard ? dragX : 0}px;--drag-y:${activeCard ? dragY : 0}px;--drag-rotate:${activeCard ? dragRotate : 0}deg`}>
+      style={`--rel:${rel};--abs-rel:${Math.abs(rel)};--pub-accent:${p.brand};--pub-button-accent:${p.accent};--pub-bg:${p.color};--pub-ink:${p.ink};--pub-brand-ink:${p.brandInk};z-index:${activeCard ? 10 : 5 - Math.abs(rel)};--drag-x:${activeCard ? dragX : 0}px;--drag-y:${activeCard ? dragY : 0}px;--drag-rotate:${activeCard ? dragRotate : 0}deg`}>
       <ResponsiveImage class="discover-card-image" image={feature.image as keyof typeof imageAssets} alt="" sizes="100vw" priority={activeCard ? 'high' : 'low'} />
-      {#if p.id === 'pulse' && activeCard}<BackgroundVideo id={storyVideos['pulse:life']} title={`Video background for ${p.name}`} kind="discover" />{/if}
+      {#if p.id === 'evening-lantern' && activeCard}<BackgroundVideo id={storyVideos['evening-lantern:life']} title={`Video background for ${p.name}`} kind="discover" />{/if}
       <div class="discover-card-shade"></div>
-      <div class="discover-card-top"><span class="discover-logo" style={`background:${p.color};border-color:${p.brand};color:${p.ink}`}>{initials(p.name)}</span><span>{activeCard && p.id === demo.data.publication ? 'CURRENT EDITION' : 'AXATE PUBLICATION'}</span></div>
-      <div class="discover-card-copy"><span class="discover-card-tag">{feature.tag}</span><div class="discover-card-name">{p.name}<span style:color={p.brand}>.</span></div></div>
+      <div class="discover-card-top"><span class="discover-logo" style={`border-color:${p.brand}`}><PublicationLogo publication={p} variant="icon" decorative /></span><span>{activeCard && p.id === demo.data.publication ? 'CURRENT EDITION' : 'AXATE PUBLICATION'}</span></div>
+      <div class="discover-card-copy"><span class="discover-card-tag">{feature.tag}</span><div class="discover-card-name"><PublicationLogo publication={p} variant="white" class="discover-wordmark" /></div></div>
       <div class="discover-card-bottom"><strong>{p.subtitle}</strong><button class="discover-select" onclick={() => enter()} disabled={!activeCard || !!outgoing} aria-label={`Swipe down to open ${p.name}`}><span>Swipe Down</span><span class="discover-enter-icon"><Icon /></span></button></div>
     </article>
   {/each}

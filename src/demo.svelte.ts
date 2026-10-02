@@ -1,4 +1,4 @@
-import { publications, stories, nextPublicationId } from './data';
+import { publications, stories, nextPublicationId, legacyPublicationIds } from './data';
 
 export interface State {
   paid: boolean;
@@ -6,7 +6,7 @@ export interface State {
   position: number;
   visited: Record<string, string[]>;
   reward: boolean;
-  screen: 'cover' | 'reader' | 'complete' | 'network';
+  screen: 'reader' | 'complete' | 'network';
   expanded: Record<string, string[]>;
   publication: string;
 }
@@ -14,9 +14,9 @@ export interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
-export type SheetKind = 'discover' | 'network' | 'wallet' | 'install' | 'touchline' | 'afterhours';
+export type SheetKind = 'discover' | 'network' | 'wallet' | 'install';
 const storageKey = 'the-point-demo-v3';
-export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, publication: 'the-point' });
+export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, publication: 'the-scoop' });
 
 function isStoryMap(value: unknown): value is Record<string, string[]> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
@@ -25,11 +25,27 @@ function isStoryMap(value: unknown): value is Record<string, string[]> {
 function restore(): State {
   try {
     const s = JSON.parse(localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey) || 'null');
+    if (s && typeof s.publication === 'string') s.publication = legacyPublicationIds[s.publication] || s.publication;
+    if (s && isStoryMap(s.visited) && isStoryMap(s.expanded)) {
+      for (const field of ['visited', 'expanded']) {
+        for (const [oldId, newId] of Object.entries(legacyPublicationIds)) {
+          if (s[field][oldId]) {
+            s[field][newId] = [...new Set([...(s[field][newId] || []), ...s[field][oldId]])];
+            delete s[field][oldId];
+          }
+        }
+      }
+    }
     if (s && typeof s.paid === 'boolean' && typeof s.reward === 'boolean'
       && Number.isFinite(s.balance) && Number.isInteger(s.position) && s.position >= 0 && s.position <= 8
       && isStoryMap(s.visited) && isStoryMap(s.expanded)
       && ['cover', 'reader', 'complete', 'network'].includes(s.screen)
       && publications.some(p => p.id === s.publication)) {
+      // Older saved editions may still point to the removed opening cover.
+      if (s.screen === 'cover') {
+        s.screen = 'reader';
+        s.position = 0;
+      }
       if (s.screen === 'network') s.screen = 'reader';
       if (s.screen === 'complete') {
         if (new Set(s.visited[s.publication] || []).size === 8) {
@@ -94,7 +110,12 @@ export function openSheet(kind: SheetKind) {
   if (kind === 'discover') demo.discoverIndex = Math.max(0, publications.findIndex(p => p.id === demo.data.publication));
   demo.sheet = kind;
 }
-export function home() { demo.data.screen = 'cover'; demo.data.position = 0; mark(); }
+export function home() {
+  demo.data.screen = 'reader';
+  demo.data.position = 0;
+  mark();
+  window.scrollTo(0, 0);
+}
 export function start() { demo.data.paid = true; demo.data.screen = 'reader'; mark(); }
 export function selectPublication(id: string, close = true) {
   if (!publications.some(p => p.id === id)) return;
@@ -107,8 +128,8 @@ export function selectPublication(id: string, close = true) {
 }
 export function move(delta: number) {
   if (demo.data.screen !== 'reader') return;
-  if (delta < 0 && demo.data.position === 0) demo.data.screen = 'cover';
-  else if (delta > 0 && demo.data.position === 8) {
+  if (delta < 0 && demo.data.position === 0) return;
+  if (delta > 0 && demo.data.position === 8) {
     if (pubVisited().length === 8) {
       demo.data.publication = nextPublicationId(demo.data.publication);
       demo.data.position = 0;

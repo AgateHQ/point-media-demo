@@ -3,15 +3,13 @@
   import { demo, currentPub, canInstall, isIos, install, notify, move, registerModelTools, type BeforeInstallPromptEvent } from './demo.svelte';
   import { readerGestures } from './gestures';
   import Header from './components/Header.svelte';
-  import Cover from './components/Cover.svelte';
   import Reader from './components/Reader.svelte';
   import Complete from './components/Complete.svelte';
   import Toast from './components/Toast.svelte';
   import Icon from './components/Icon.svelte';
 
   let pub = $derived(currentPub());
-  let cover = $derived(demo.data.screen === 'cover');
-  let paper = $derived(pub.id === 'afterhours' || pub.id === 'pulse');
+  let paper = $derived(pub.ink !== '#ffffff');
   let navigationKey = $derived(`${pub.id}:${demo.data.screen}:${demo.data.position}`);
   let Sheets = $state.raw<typeof import('./components/Sheets.svelte').default | null>(null);
   let sheetsLoading: Promise<void> | undefined;
@@ -59,12 +57,12 @@
 </script>
 
 <svelte:window onkeydown={keydown} />
-<div class={`publication-shell publication-shell-${pub.id}`} style={`--publication-bg:${pub.color};--publication-ink:${pub.ink};--publication-brand:${pub.brand};--publication-accent:${pub.accent}`} use:readerGestures>
+<div class={`publication-shell publication-shell-${pub.id}`} class:article-layout={demo.data.screen === 'reader' && demo.data.position !== 4} style={`--publication-bg:${pub.color};--publication-ink:${pub.ink};--publication-brand:${pub.brand};--publication-accent:${pub.accent};--publication-brand-ink:${pub.brandInk};--shell-canvas:${pub.canvas};--shell-header:${pub.header};--shell-ink:#ffffff;--edition-bg:${pub.color};--edition-ink:${pub.ink}`} use:readerGestures>
   <Header />
-  <main class="stage" class:cover-stage={cover}>
-    <section class={`reader publication-${pub.id}`} class:cover class:paper-edition={paper} aria-label="Daily edition">
+  <main class="stage">
+    <section class={`reader publication-${pub.id}`} class:paper-edition={paper} aria-label="Daily edition">
       {#key navigationKey}
-        {#if cover}<Cover />{:else if demo.data.screen === 'complete'}<Complete />{:else}<Reader />{/if}
+        {#if demo.data.screen === 'complete'}<Complete />{:else}<Reader />{/if}
       {/key}
     </section>
   </main>
