@@ -131,8 +131,9 @@ export function move(delta: number) {
   if (delta < 0 && demo.data.position === 0) return;
   if (delta > 0 && demo.data.position === 8) {
     if (pubVisited().length === 8) {
-      demo.data.publication = nextPublicationId(demo.data.publication);
-      demo.data.position = 0;
+      demo.data.screen = 'complete';
+      persist();
+      return;
     } else {
       const missing = getStories().findIndex(st => !pubVisited().includes(st.id));
       demo.data.position = missing >= 4 ? missing + 1 : missing;

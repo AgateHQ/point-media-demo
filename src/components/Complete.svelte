@@ -1,18 +1,30 @@
 <script lang="ts">
-  import { demo, currentPub, start, openSheet } from '../demo.svelte';
+  import { demo, currentPub, start, openSheet, selectPublication } from '../demo.svelte';
+  import { publications, stories, nextPublicationId } from '../data';
   import Icon from './Icon.svelte';
   let pub = $derived(currentPub());
+  let nextPub = $derived(publications.find(item => item.id === nextPublicationId(pub.id))!);
+  let preview = $derived(stories[nextPub.storyOrder[3]]);
+  let streak = $derived(Math.max(3, Object.keys(demo.data.visited).filter(id => (demo.data.visited[id] || []).length === 8).length + 2));
   function again() { demo.data.position = 0; start(); }
   function last() { demo.data.position = 8; start(); }
+  function nextEdition() { selectPublication(pub.id === 'pitchline' ? 'the-scoop' : ['the-scoop','brightwire','full-time','evening-lantern','northgate-ledger','pitchline'][(['the-scoop','brightwire','full-time','evening-lantern','northgate-ledger','pitchline'].indexOf(pub.id) + 1) % 6]); }
 </script>
 
 <div class="completion">
   <div class="completion-top"><button class="completion-back" onclick={last} aria-label="Back to the last article"><Icon /><span>Last article</span></button><span>08 / 08</span></div>
   <div class="complete-symbol" style:background={pub.accent}>✓</div>
-  <span class="eyebrow">THAT'S YOUR EDITION.</span>
-  <h1>You're<br />up to date<span style:color={pub.accent}>.</span></h1>
-  <p>Eight stories. A fresh perspective.<br />The rest of the day is yours.</p>
-  <div class="stats"><div><strong>8 / 8</strong><span>STORIES READ</span></div><div><strong>{demo.data.reward ? '10p' : '0p'}</strong><span>REWARDS EARNED</span></div></div>
-  <button class="primary" onclick={again} style:background={pub.accent}>Read again <Icon /></button>
+  <span class="eyebrow">EDITION COMPLETE <span>{pub.name.toUpperCase()}</span></span>
+  <h1>You've done<br />with this edition<span style:color={pub.accent}>.</span></h1>
+  <p>Eight stories, all read. Here’s a secret preview of what’s coming next.</p>
+  <div class="stats"><div><strong>8</strong><span>ARTICLES READ</span></div><div><strong>{streak} days</strong><span>READING STREAK</span></div><div><strong>{demo.data.reward ? '10p' : '0p'}</strong><span>REWARDS EARNED</span></div></div>
+  <article class="completion-preview">
+    <div class="completion-preview-label"><span>JUST FOR YOU</span><span>SECRET PREVIEW</span></div>
+    <small>{nextPub.name.toUpperCase()} · NEXT EDITION</small>
+    <h2>{preview.title.replace(/\n/g, ' ')}</h2>
+    <p>{preview.subtitle}</p>
+  </article>
+  <button class="primary" onclick={nextEdition} style:background={pub.accent}>Explore another edition <Icon /></button>
+  <button class="completion-secondary" onclick={again}>Read this edition again</button>
   <button class="completion-network-cue" onclick={() => openSheet('network')} style={`--completion-accent:${pub.accent}`}><span><Icon /></span><strong>Swipe up to see the rest of the network</strong></button>
 </div>
