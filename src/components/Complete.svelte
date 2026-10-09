@@ -12,12 +12,17 @@
 </script>
 
 <div class="completion">
-  <div class="completion-top"><button class="completion-back" onclick={last} aria-label="Back to the last article"><Icon /><span>Last article</span></button><span>08 / 08</span></div>
-  <div class="complete-symbol" style:background={pub.accent}>✓</div>
+  <div class="completion-top"><button class="completion-back" onclick={last} aria-label="Back to the last article"><Icon /><span>Last article</span></button><span>09 / 08</span></div>
+  <div class="completion-hero">
+    <div class="complete-symbol" style:background={pub.accent}>✓</div>
+    <div class="level-badge"><span>LEVEL</span><strong>09</strong></div>
+  </div>
   <span class="eyebrow">EDITION COMPLETE <span>{pub.name.toUpperCase()}</span></span>
   <h1>You've done<br />with this edition<span style:color={pub.accent}>.</span></h1>
-  <p>Eight stories, all read. Here’s a secret preview of what’s coming next.</p>
+  <p>Eight stories, all read. You’ve unlocked the ninth: a secret preview of what’s coming next.</p>
+  <div class="completion-meter"><div class="meter-label"><span>EDITION PROGRESS</span><strong>8 / 8 COMPLETE</strong></div><div class="meter-track">{#each Array(8) as _}<i class="meter-dot filled" style:background={pub.accent}></i>{/each}<i class="meter-dot next" style={`--meter-accent:${pub.accent}`}>9</i></div><small>NEXT EDITION UNLOCKED</small></div>
   <div class="stats"><div><strong>8</strong><span>ARTICLES READ</span></div><div><strong>{streak} days</strong><span>READING STREAK</span></div><div><strong>{demo.data.reward ? '10p' : '0p'}</strong><span>REWARDS EARNED</span></div></div>
+  <div class="achievement-row"><span class="achievement-icon">✦</span><div><strong>Perfect edition</strong><small>Read every story in {pub.name}</small></div><span class="achievement-check">✓</span></div>
   <article class="completion-preview">
     <div class="completion-preview-label"><span>JUST FOR YOU</span><span>SECRET PREVIEW</span></div>
     <small>{nextPub.name.toUpperCase()} · NEXT EDITION</small>
