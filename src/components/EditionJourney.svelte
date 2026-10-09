@@ -102,10 +102,10 @@
     font-size: .75rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    transition: color .25s, background .25s, border-color .25s;
+    transition: color var(--motion-duration-quick) var(--motion-ease-standard), background var(--motion-duration-quick) var(--motion-ease-standard), border-color var(--motion-duration-quick) var(--motion-ease-standard);
   }
   .journey-step-number svg { width: 16px; height: 16px; }
-  .journey-step-track { width: 100%; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--edition-ink) 14%, transparent); transition: background .35s; }
+  .journey-step-track { width: 100%; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--edition-ink) 14%, transparent); transition: background var(--motion-duration-standard) var(--motion-ease-standard); }
   .journey-seen .journey-step-number { color: var(--publication-brand); }
   .journey-seen .journey-step-track { background: color-mix(in srgb, var(--publication-brand) 42%, var(--edition-bg)); }
   .journey-current .journey-step-number { color: #fff; background: var(--publication-brand); border-color: var(--publication-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--publication-brand) 10%, transparent); }
@@ -113,7 +113,7 @@
   .journey-collected:not(.journey-current) .journey-step-number { background: color-mix(in srgb, var(--publication-brand) 9%, transparent); }
 
   .journey-bonus { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 0 0 5.125rem; min-width: 0; padding-left: 12px; border-left: 1px solid color-mix(in srgb, var(--publication-brand) 20%, transparent); }
-  .journey-bonus-marker { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--publication-brand) 45%, transparent); color: var(--publication-brand); font-size: .8125rem; font-weight: 800; transition: background .35s, color .35s, box-shadow .35s; }
+  .journey-bonus-marker { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--publication-brand) 45%, transparent); color: var(--publication-brand); font-size: .8125rem; font-weight: 800; transition: background var(--motion-duration-standard) var(--motion-ease-standard), color var(--motion-duration-standard) var(--motion-ease-standard), box-shadow var(--motion-duration-standard) var(--motion-ease-standard); }
   .journey-bonus-marker svg { width: 18px; height: 18px; }
   .journey-bonus-label { color: var(--journey-quiet); font-size: .75rem; line-height: 1.3; text-align: center; }
   .journey-complete .journey-bonus-marker { background: var(--publication-brand); color: #fff; border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--publication-brand) 12%, transparent); }

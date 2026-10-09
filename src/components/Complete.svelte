@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demo, currentPub, editionXp, getStories, networkXp, pubCollected, readingStreak, recentReadingHistory, xpRules, home, openStory, openSheet, selectPublication } from '../demo.svelte';
+  import { demo, currentPub, editionXp, getStories, networkXp, pubCollected, readingInsight, readingStreak, recentReadingHistory, xpRules, home, openStory, openSheet, selectPublication } from '../demo.svelte';
   import { publications, stories, nextPublicationId } from '../data';
   import Icon from './Icon.svelte';
   let pub = $derived(currentPub());
@@ -14,6 +14,7 @@
   let perfectEdition = $derived(collectedCount === storyTotal);
   let xp = $derived(editionXp());
   let allXp = $derived(networkXp());
+  let insight = $derived(readingInsight());
   let completionPercent = $state(0);
 
   onMount(() => {
@@ -73,6 +74,14 @@
       <small>Filed · 08 / 08</small>
     </header>
     <div class="stats"><div><strong>8</strong><span>ARTICLES READ</span></div><div><strong>{streak} {streak === 1 ? 'day' : 'days'}</strong><span>READING RUN</span></div><div><strong>{demo.data.reward ? '10p' : '0p'}</strong><span>READER CREDIT</span></div></div>
+    <aside class="reading-insight" aria-labelledby="reading-insight-title" data-reading-insight>
+      <span class="reading-insight-mark" aria-hidden="true">01</span>
+      <div class="reading-insight-copy">
+        <header><span>{insight.kicker}</span><small>{insight.sample}</small></header>
+        <h2 id="reading-insight-title">{insight.title}</h2>
+        <p>{insight.detail}</p>
+      </div>
+    </aside>
     <section class="streak-card" aria-labelledby="streak-title" data-reading-streak>
     <div class="streak-summary">
       <span class="streak-flame" class:flame-lit={streak > 0} aria-hidden="true">
@@ -170,28 +179,36 @@
   .completion-ring { position: relative; display: grid; place-items: center; width: 5.25rem; aspect-ratio: 1; font-family: 'Manrope', sans-serif; }
   .completion-ring>svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
   .completion-ring-track { stroke: color-mix(in srgb, var(--publication-brand) 14%, transparent); stroke-width: 3; }
-  .completion-ring-fill { stroke: var(--publication-brand); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 100; transition: stroke-dashoffset 55ms linear; filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--publication-brand) 18%, transparent)); }
+  .completion-ring-fill { stroke: var(--publication-brand); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 100; transition: stroke-dashoffset var(--motion-duration-progress) var(--motion-ease-linear); filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--publication-brand) 18%, transparent)); }
   .completion-ring-value { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .completion-ring-value strong { color: var(--edition-ink); font-size: 1.55rem; font-weight: 800; line-height: .9; letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
   .completion-ring-value small { margin-left: 1px; color: var(--publication-brand); font-size: .625rem; letter-spacing: 0; }
   .completion-ring-value span { color: color-mix(in srgb, var(--edition-ink) 57%, var(--edition-bg)); font-size: .5rem; font-weight: 800; line-height: 1; letter-spacing: .08em; }
   .completion-bridge { display: grid; grid-template-columns: 1fr 24px 1fr; align-items: center; gap: 6px; color: var(--publication-brand); }
-  .completion-bridge span { height: 1px; background: currentColor; transform-origin: center; animation: completion-line .65s .12s cubic-bezier(.22, 1, .36, 1) both; }
-  .completion-bridge svg { width: 24px; height: 24px; overflow: visible; fill: var(--edition-bg); stroke: currentColor; stroke-width: 1.25; animation: completion-spark .7s .22s cubic-bezier(.22, 1, .36, 1) both; }
-  .completion-bonus { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 5.25rem; aspect-ratio: 1; border-radius: 50%; color: var(--publication-brand-ink); background: var(--publication-brand); box-shadow: 0 0 0 6px color-mix(in srgb, var(--publication-brand) 9%, transparent); animation: completion-unlock .72s .25s cubic-bezier(.22, 1, .36, 1) both; }
+  .completion-bridge span { height: 1px; background: currentColor; transform-origin: center; animation: completion-line var(--motion-duration-composed) var(--motion-duration-instant) var(--motion-ease-enter) both; }
+  .completion-bridge svg { width: 24px; height: 24px; overflow: visible; fill: var(--edition-bg); stroke: currentColor; stroke-width: 1.25; animation: completion-spark var(--motion-duration-composed) var(--motion-duration-quick) var(--motion-ease-enter) both; }
+  .completion-bonus { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 5.25rem; aspect-ratio: 1; border-radius: 50%; color: var(--publication-brand-ink); background: var(--publication-brand); box-shadow: 0 0 0 6px color-mix(in srgb, var(--publication-brand) 9%, transparent); animation: completion-unlock var(--motion-duration-composed) var(--motion-duration-quick) var(--motion-ease-enter) both; }
   .completion-bonus span { font-size: .5rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
   .completion-bonus strong { font-family: 'Manrope', sans-serif; font-size: 2.25rem; font-weight: 800; line-height: .92; letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
   .completion-passage-labels { display: flex; align-items: center; justify-content: space-between; padding-right: 3px; color: color-mix(in srgb, var(--edition-ink) 55%, var(--edition-bg)); font-size: .5625rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
   .completion-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .completion-celebration h1 { margin: 30px 0 15px; color: var(--edition-ink); font-family: var(--article-title-font, 'Manrope', sans-serif); font-size: clamp(2.5rem, 11vw, 3.65rem); font-weight: 800; line-height: 1.02; letter-spacing: -.055em; text-wrap: balance; animation: completion-copy .62s .38s cubic-bezier(.22, 1, .36, 1) both; }
+  .completion-celebration h1 { margin: 30px 0 15px; color: var(--edition-ink); font-family: var(--article-title-font, 'Manrope', sans-serif); font-size: clamp(2.5rem, 11vw, 3.65rem); font-weight: 800; line-height: 1.02; letter-spacing: -.055em; text-wrap: balance; animation: completion-copy var(--motion-duration-composed) var(--motion-duration-standard) var(--motion-ease-enter) both; }
   .completion-celebration h1 em { color: var(--publication-brand); font-style: normal; }
-  .completion-celebration>p { max-width: 30rem; margin: 0; color: color-mix(in srgb, var(--edition-ink) 72%, var(--edition-bg)); font-size: .9375rem; line-height: 1.6; animation: completion-copy .62s .46s cubic-bezier(.22, 1, .36, 1) both; }
+  .completion-celebration>p { max-width: 30rem; margin: 0; color: color-mix(in srgb, var(--edition-ink) 72%, var(--edition-bg)); font-size: .9375rem; line-height: 1.6; animation: completion-copy var(--motion-duration-composed) calc(var(--motion-duration-standard) + var(--motion-duration-progress)) var(--motion-ease-enter) both; }
   .reader-record { margin: 23px 0 22px; padding: 17px 0 20px; border-top: 3px double color-mix(in srgb, var(--edition-ink) 38%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--edition-ink) 25%, transparent); }
   .reader-record-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
   .reader-record-heading>div>span { display: block; margin-bottom: 4px; color: var(--publication-brand); font-size: .5625rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
   .reader-record-heading h2 { margin: 0; color: var(--edition-ink); font-family: var(--article-title-font, 'Manrope', sans-serif); font-size: 1.4rem; font-weight: 800; line-height: 1.12; letter-spacing: -.035em; }
   .reader-record-heading>small { padding-bottom: 2px; color: color-mix(in srgb, var(--edition-ink) 54%, var(--edition-bg)); font-size: .5625rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
   .reader-record>.stats { margin: 16px 0 0; }
+  .reading-insight { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 14px; padding: 20px 0; border-top: 1px solid color-mix(in srgb, var(--edition-ink) 16%, transparent); color: var(--edition-ink); }
+  .reading-insight-mark { display: grid; place-items: center; align-self: start; width: 42px; aspect-ratio: 1; border: 1px solid color-mix(in srgb, var(--publication-brand) 34%, transparent); border-radius: 50%; color: var(--publication-brand); font-family: 'Manrope', sans-serif; font-size: .6875rem; font-weight: 800; letter-spacing: .04em; }
+  .reading-insight-copy { min-width: 0; padding-left: 14px; border-left: 2px solid var(--publication-brand); }
+  .reading-insight-copy header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .reading-insight-copy header>span { color: var(--publication-brand); font-size: .5625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .reading-insight-copy header>small { overflow: hidden; color: color-mix(in srgb, var(--edition-ink) 49%, var(--edition-bg)); font-size: .5rem; letter-spacing: .06em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+  .reading-insight h2 { margin: 0; color: var(--edition-ink); font-family: var(--article-title-font, 'Manrope', sans-serif); font-size: 1.2rem; font-weight: 800; line-height: 1.15; letter-spacing: -.03em; text-wrap: balance; }
+  .reader-record .reading-insight p { margin: 5px 0 0; color: color-mix(in srgb, var(--edition-ink) 62%, var(--edition-bg)); font-size: .6875rem; line-height: 1.45; }
   .streak-card { margin: 19px 0 20px; padding: 17px; border: 1px solid color-mix(in srgb, var(--publication-brand) 20%, transparent); border-radius: 3px; color: var(--edition-ink); background: color-mix(in srgb, var(--publication-brand) 2.5%, var(--edition-bg)); }
   .streak-summary { display: flex; align-items: center; gap: 13px; }
   .streak-flame { display: grid; place-items: center; flex: 0 0 48px; width: 48px; height: 48px; border-radius: 50%; color: color-mix(in srgb, var(--edition-ink) 28%, var(--edition-bg)); background: color-mix(in srgb, var(--edition-ink) 4%, var(--edition-bg)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--edition-ink) 10%, transparent); }
@@ -300,6 +317,10 @@
     .completion-bridge { grid-template-columns: 1fr 19px 1fr; gap: 3px; }
     .completion-bridge svg { width: 19px; height: 19px; }
     .completion-celebration h1 { font-size: 2.45rem; }
+    .reading-insight { grid-template-columns: 36px minmax(0, 1fr); gap: 11px; }
+    .reading-insight-mark { width: 36px; }
+    .reading-insight-copy { padding-left: 11px; }
+    .reading-insight-copy header { align-items: flex-start; flex-direction: column; gap: 3px; }
     .streak-card { padding: 15px 13px; }
     .streak-summary { gap: 11px; }
     .streak-flame { flex-basis: 43px; width: 43px; height: 43px; }

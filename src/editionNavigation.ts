@@ -9,6 +9,16 @@ interface EditionTurn {
 }
 let activeTurn: EditionTurn | undefined;
 
+function motionToken(name: string, fallback: string) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+function motionMilliseconds(name: string, fallback: number) {
+  const value = motionToken(name, `${fallback}ms`);
+  const amount = Number.parseFloat(value);
+  return Number.isFinite(amount) ? amount * (value.endsWith('s') && !value.endsWith('ms') ? 1000 : 1) : fallback;
+}
+
 function setTurnCanvas() {
   const shell = document.querySelector('.publication-shell');
   if (shell) document.documentElement.style.setProperty('--edition-turn-canvas', getComputedStyle(shell).backgroundColor);
@@ -69,10 +79,14 @@ export function turnEdition(update: () => void, direction: TurnDirection, animat
     // itself: that would make the fixed unlock footer move with its content.
     const card = document.querySelector<HTMLElement>('.reader .edition-card:not(.card-compact), .reader .sponsored-visual, .reader .completion');
     if (!card?.animate) { turn.finish(); return; }
+    const distance = motionToken('--motion-distance-page', '24px');
     turn.animation = card.animate([
-      { opacity: 0, transform: `translateX(${direction === 'forward' ? 24 : -24}px)` },
+      { opacity: 0, transform: `translateX(${direction === 'forward' ? '' : '-'}${distance})` },
       { opacity: 1, transform: 'translateX(0)' },
-    ], { duration: 360, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    ], {
+      duration: motionMilliseconds('--motion-duration-standard', 360),
+      easing: motionToken('--motion-ease-enter', 'cubic-bezier(.16, 1, .3, 1)'),
+    });
     turn.animation.finished.then(turn.finish, turn.finish);
   };
 

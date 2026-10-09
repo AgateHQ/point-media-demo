@@ -51,12 +51,35 @@ Sharing was considered and deliberately omitted: the completion moment is a priv
 
 ## 3. Add a reading identity
 
-- [ ] Show lightweight reading insights such as “You tend to finish culture stories first.”
+- [x] Show lightweight reading insights such as “You tend to finish culture stories first.”
 - [ ] Show average reading session length.
 - [ ] Show weekly story totals.
 - [ ] Show the reader’s current streak and regular-reader status.
 - [ ] Explore a reading personality label, such as “The Curious Catch-up.”
 - [ ] Surface this lightly through the wallet or profile rather than building a heavy dashboard.
+
+The first reading-identity signal now appears as a quiet editorial note inside the completion colophon. It uses the actual order of fully read, collected stories: a single observed edition gets deliberately tentative language, repeated section-first behaviour earns a “you tend to…” observation, ties stay broad, and an empty history never invents a preference. The note includes its sample size so the reader can see how much evidence sits behind the insight.
+
+## 6. Add better motion and feedback
+
+- [x] Establish a consistent motion language for the app.
+- [ ] Animate progress segments when an article is completed.
+- [ ] Improve wallet charge and reward moments.
+- [ ] Animate the completion badge as it settles into place.
+- [ ] Animate streak and XP values when they change.
+- [ ] Reveal the preview card with a gentle masked animation.
+- [ ] Respect `prefers-reduced-motion` for every new interaction.
+
+Motion now follows one editorial vocabulary across the app: live progress is immediate, controls are quick, in-place content changes are standard, milestones and sheets are composed, and exits are deliberately shorter than arrivals. Shared duration, easing, and distance tokens drive CSS and the JavaScript article-turn fallback alike; journeys, cards, images, wallet feedback, discovery, sheets, halfway and final-story moments, and completion choreography now speak the same language. Existing reduced-motion paths remain immediate.
+
+## 7. Make publications feel more distinct
+
+- [ ] Give each publication its own typography treatment.
+- [ ] Define distinct editorial vocabulary for each publication.
+- [ ] Give each completion screen its own accent patterns.
+- [ ] Add publication-specific achievement badges.
+- [ ] Improve publication logos and header lockups.
+- [ ] Make switching publications feel like entering a different world.
 
 ## 4. Make the secret preview more desirable
 
@@ -84,25 +107,6 @@ Sharing was considered and deliberately omitted: the completion moment is a priv
 - [ ] Across the Network
 - [ ] Early Bird
 - [ ] Night Owl
-
-## 6. Add better motion and feedback
-
-- [ ] Establish a consistent motion language for the app.
-- [ ] Animate progress segments when an article is completed.
-- [ ] Improve wallet charge and reward moments.
-- [ ] Animate the completion badge as it settles into place.
-- [ ] Animate streak and XP values when they change.
-- [ ] Reveal the preview card with a gentle masked animation.
-- [ ] Respect `prefers-reduced-motion` for every new interaction.
-
-## 7. Make publications feel more distinct
-
-- [ ] Give each publication its own typography treatment.
-- [ ] Define distinct editorial vocabulary for each publication.
-- [ ] Give each completion screen its own accent patterns.
-- [ ] Add publication-specific achievement badges.
-- [ ] Improve publication logos and header lockups.
-- [ ] Make switching publications feel like entering a different world.
 
 ## 8. Create an elegant network home
 

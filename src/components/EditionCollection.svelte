@@ -45,7 +45,7 @@
   .collection-progress span { height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--publication-brand) 15%, transparent); }
   .collection-progress .collected { background: var(--publication-brand); }
   .collection-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 14px; }
-  .collection-card-button { padding: 0; text-align: left; min-width: 0; background: transparent; border-radius: 3px; transition: transform .2s; }
+  .collection-card-button { padding: 0; text-align: left; min-width: 0; background: transparent; border-radius: 3px; transition: transform var(--motion-duration-quick) var(--motion-ease-standard); }
   .collection-card-button:hover { transform: translateY(-3px); filter: none; }
   .collection-card-button:focus-visible { outline-color: var(--publication-brand); outline-offset: 4px; }
   .collection-footnote { margin: 28px 0 0; font-size: .75rem; text-align: center; color: color-mix(in srgb, var(--edition-ink) 60%, var(--edition-bg)); }

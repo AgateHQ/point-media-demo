@@ -1,4 +1,4 @@
-import { publications, stories, legacyPublicationIds } from './data';
+import { publications, stories, legacyPublicationIds, storySections } from './data';
 import { settleEditionTurn, turnEdition } from './editionNavigation';
 
 export interface State {
@@ -155,6 +155,58 @@ export function recentReadingHistory(length = 7): RecentReadingDay[] {
     const key = localDateKey(day);
     return { key, label: offset === 0 ? 'Today' : weekday.format(day), date: String(day.getDate()), read: read.has(key), today: offset === 0 };
   });
+}
+export interface ReadingInsight {
+  kicker: string;
+  title: string;
+  detail: string;
+  sample: string;
+}
+export function readingInsight(): ReadingInsight {
+  const firstSections = publications.flatMap(publication => {
+    const editionIds = new Set(publication.storyOrder.map(index => stories[index].id));
+    const firstFinished = (demo.data.collected[publication.id] || []).find(id => editionIds.has(id));
+    return firstFinished ? [storySections[firstFinished] || 'News'] : [];
+  });
+  const finishedCount = publications.reduce((total, publication) => {
+    const editionIds = new Set(publication.storyOrder.map(index => stories[index].id));
+    return total + new Set((demo.data.collected[publication.id] || []).filter(id => editionIds.has(id))).size;
+  }, 0);
+  if (!firstSections.length) return {
+    kicker: 'Reading note',
+    title: 'Your reading pattern is taking shape.',
+    detail: 'Finish a full story and the first signal will appear here.',
+    sample: 'No full reads yet',
+  };
+  if (firstSections.length === 1) {
+    const section = firstSections[0];
+    const article = /^[aeiou]/i.test(section) ? 'an' : 'a';
+    return {
+      kicker: 'First signal',
+      title: `${section} led the way.`,
+      detail: `Your first full read in this edition was ${article} ${section.toLowerCase()} story.`,
+      sample: `${finishedCount} full ${finishedCount === 1 ? 'read' : 'reads'} observed`,
+    };
+  }
+  const counts = firstSections.reduce<Record<string, number>>((result, section) => {
+    result[section] = (result[section] || 0) + 1;
+    return result;
+  }, {});
+  const high = Math.max(...Object.values(counts));
+  const leaders = Object.keys(counts).filter(section => counts[section] === high);
+  if (leaders.length !== 1) return {
+    kicker: 'Reading note',
+    title: 'Your reading starts broadly.',
+    detail: 'No single section leads your first full reads yet.',
+    sample: `${firstSections.length} editions observed`,
+  };
+  const leader = leaders[0];
+  return {
+    kicker: 'Reading pattern',
+    title: `You tend to finish ${leader.toLowerCase()} stories first.`,
+    detail: `${leader} was your first full read in ${high} of ${firstSections.length} editions.`,
+    sample: `${firstSections.length} editions observed`,
+  };
 }
 export function halfwayProgress() {
   const edition = getStories();

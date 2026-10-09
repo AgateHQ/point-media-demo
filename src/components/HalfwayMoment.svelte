@@ -107,8 +107,8 @@
   .halfway-seal { grid-area: seal; position: relative; width: 112px; height: 112px; flex-shrink: 0; }
   .halfway-seal>svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .halfway-ring-track { stroke: color-mix(in srgb, var(--publication-brand) 15%, transparent); stroke-width: 2; }
-  .halfway-ring-fill { stroke: var(--publication-brand); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--halfway-progress)); transform: rotate(-90deg); transform-origin: 56px 56px; transition: stroke-dashoffset .8s cubic-bezier(.22, 1, .36, 1); }
-  .halfway-star { fill: var(--publication-brand); opacity: .55; transition: opacity .35s; }
+  .halfway-ring-fill { stroke: var(--publication-brand); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--halfway-progress)); transform: rotate(-90deg); transform-origin: 56px 56px; transition: stroke-dashoffset var(--motion-duration-composed) var(--motion-ease-enter); }
+  .halfway-star { fill: var(--publication-brand); opacity: .55; transition: opacity var(--motion-duration-standard) var(--motion-ease-standard); }
   .halfway-earned .halfway-star { opacity: 1; }
   .halfway-seal-count { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; font-family: 'Manrope', sans-serif; }
   .halfway-seal-count strong { color: var(--publication-brand); font-size: 2.625rem; font-weight: 800; line-height: 1; letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
@@ -119,7 +119,7 @@
   .halfway-first-half { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 0 0 22px; border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 20%, transparent); }
   .halfway-first-half>span, .halfway-next-label { color: var(--publication-brand); font-family: 'DM Sans', sans-serif; font-size: .6875rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   .halfway-stamps { display: flex; gap: 7px; }
-  .halfway-stamp { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 42px; height: 30px; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--publication-brand) 23%, transparent); border-top-width: 3px; border-radius: 2px; color: color-mix(in srgb, var(--edition-ink) 54%, var(--edition-bg)); font-family: 'Manrope', sans-serif; font-size: .625rem; font-weight: 800; font-variant-numeric: tabular-nums; transition: color .25s, background .25s; }
+  .halfway-stamp { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 42px; height: 30px; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--publication-brand) 23%, transparent); border-top-width: 3px; border-radius: 2px; color: color-mix(in srgb, var(--edition-ink) 54%, var(--edition-bg)); font-family: 'Manrope', sans-serif; font-size: .625rem; font-weight: 800; font-variant-numeric: tabular-nums; transition: color var(--motion-duration-quick) var(--motion-ease-standard), background var(--motion-duration-quick) var(--motion-ease-standard); }
   .halfway-stamp svg { width: 13px; height: 13px; }
   .stamp-earned { color: #fff; background: var(--publication-brand); border-color: var(--publication-brand); }
   .halfway-next { padding-top: 21px; }
@@ -137,8 +137,8 @@
   .halfway-preview-note { display: flex; align-items: center; gap: 8px; margin: 18px 0 0; color: color-mix(in srgb, var(--edition-ink) 60%, var(--edition-bg)); font-family: 'DM Sans', sans-serif; font-size: .75rem; line-height: 1.5; }
   .halfway-preview-note svg { flex-shrink: 0; width: 17px; height: 17px; color: var(--publication-brand); }
   .halfway-announcement { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .halfway-celebrate .halfway-copy h2 { animation: halfway-settle .65s cubic-bezier(.22, 1, .36, 1) both; }
-  .halfway-celebrate .halfway-seal-count strong { animation: halfway-settle .55s cubic-bezier(.22, 1, .36, 1) both; }
+  .halfway-celebrate .halfway-copy h2 { animation: halfway-settle var(--motion-duration-composed) var(--motion-ease-enter) both; }
+  .halfway-celebrate .halfway-seal-count strong { animation: halfway-settle var(--motion-duration-composed) var(--motion-ease-enter) both; }
   @keyframes halfway-settle { from { opacity: .25; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @container halfway-moment (max-width: 30rem) {
     .halfway-hero { grid-template-columns: minmax(0, 1fr) 80px; grid-template-areas: 'title seal' 'copy copy'; gap: 16px; margin: 22px 0 20px; }

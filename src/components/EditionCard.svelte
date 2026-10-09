@@ -70,7 +70,7 @@
   .card-collected .card-status-line { background: color-mix(in srgb, var(--publication-brand) 5%, transparent); }
   .card-thumbnail { position: relative; aspect-ratio: 16/11; overflow: hidden; background: color-mix(in srgb, var(--publication-brand) 8%, transparent); }
   .card-thumbnail :global(picture) { display: block; width: 100%; height: 100%; }
-  .card-thumbnail :global(.collection-image) { display: block; width: 100%; height: 100%; object-fit: cover; transition: opacity .25s; opacity: 0; }
+  .card-thumbnail :global(.collection-image) { display: block; width: 100%; height: 100%; object-fit: cover; transition: opacity var(--motion-duration-standard) var(--motion-ease-standard); opacity: 0; }
   .card-thumbnail :global(.collection-image.loaded) { opacity: 1; }
   .card-photo-stamp { position: absolute; right: 10px; bottom: 10px; display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid #fff; border-radius: 50%; background: var(--publication-brand); color: #fff; box-shadow: 0 3px 10px #0003; }
   .card-photo-stamp svg { width: 20px; height: 20px; }
