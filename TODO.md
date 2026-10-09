@@ -12,9 +12,11 @@ Turn the app from a beautiful article demo into a daily reading ritual with prog
 - [x] Make each article feel like a collectible card in a daily set.
 - [x] Add subtle transitions between articles so the reader feels they are moving through an edition.
 - [x] Introduce a “You’re halfway through” moment at article 4.
-- [ ] Make the final article feel like a finish line rather than just the next swipe.
+- [x] Make the final article feel like a finish line rather than just the next swipe.
 
 The journey indicator now stays beneath the masthead while reading, distinguishes the current and previously opened stories, keeps the partner moment outside the eight-article count, and unlocks the ninth bonus preview at completion. It follows each publication’s palette, supports screen-reader announcements and reduced motion, and reflows for enlarged text. Returning to the app preserves the bonus page.
+
+The eighth story now ends at a deliberate 08/08 finish line rather than auto-advancing. Collecting its card completes the visual set, pauses the journey, and reveals an explicit route into the secret preview; any skipped stories route back through the existing completion guard. The last-story journey label, screen-reader announcement, compact layouts, enlarged text, and reduced-motion treatment carry the finish moment without turning it into a game-show celebration.
 
 Articles now have numbered press-card covers with publication colours and typography. Finishing the full article earns a persistent collection stamp and a check in the journey. “Your set” opens an eight-card collection with photographs, earned states, and links to revisit stories. Collections stay separate for each publication; opening the collection or revisiting an unlocked story adds no charge. Existing saves retain their wallet and progress, with an empty collection until cards are earned.
 
@@ -24,14 +26,28 @@ Article four is now the halfway chapter. Its closing checkpoint has a half-fille
 
 ## 2. Turn completion into a real reward screen
 
-- [ ] Make the 9th/8 moment feel like a deliberate completion celebration.
-- [ ] Add an animated completion ring that fills from 0 to 100%.
-- [ ] Add a “Perfect edition” badge.
-- [ ] Add XP earned for reading, unlocking, and completing.
-- [ ] Add a streak flame with a small history of recent reading days.
-- [ ] Make the “Next edition unlocked” card feel slightly secretive.
-- [ ] Consider a shareable completion card.
-- [ ] Keep the tone editorial and premium rather than overly game-like.
+- [x] Make the 9th/8 moment feel like a deliberate completion celebration.
+- [x] Add an animated completion ring that fills from 0 to 100%.
+- [x] Add a “Perfect edition” badge.
+- [x] Add XP earned for reading, unlocking, and completing.
+- [x] Add a streak flame with a small history of recent reading days.
+- [x] Make the “Next edition unlocked” card feel slightly secretive.
+- [x] ~~Consider a shareable completion card.~~ Intentionally omitted — the completion stays private.
+- [x] Keep the tone editorial and premium rather than overly game-like.
+
+Completion now opens with a clear editorial passage from `08 / 08 read` to `09 unlocked`, replacing the ambiguous level badge with a restrained reveal and the line “The edition is read. The ninth is yours.” The hierarchy explains the bonus before showing stats or achievements, retains each publication’s palette, announces the relationship accessibly, and becomes immediate when reduced motion is requested.
+
+The `08 / 08` seal now draws a publication-coloured completion ring from 0 to 100%, with a synchronized percentage count that eases into its final state before the ninth preview. Its progress semantics remain truthful throughout the animation, a live reduced-motion change completes it immediately, and the compact seal stays legible at the narrowest supported width.
+
+“Perfect edition” is now a genuine, persistent publication seal earned only by collecting all eight full-story cards. Completed sets receive a rosette in the publication palette; readers who reached the preview by skipping ahead see an honest in-progress treatment with eight clear segments and a route back to their set. The badge exposes its earned state and progress accessibly and never confuses opening a story with finishing it.
+
+Edition XP is now a transparent reading ledger: `2 XP` for each once-only full-story unlock, `8 XP` for each story finished and collected, and `20 XP` for completing the eight-story journey, for a perfect total of `100 XP`. The receipt shows each contribution and the reader’s network-wide total; because XP is derived from persistent reading state, revisits and repeated taps can never award it twice.
+
+The completion receipt now includes a publication-coloured streak flame and a seven-day reading history anchored to the reader’s local calendar. Completing any edition records that day once across the network, consecutive-day streaks survive reloads, and rereading or completing another title on the same day cannot inflate the run. Existing demo saves retain their familiar three-day lead-in and gain today only when appropriate.
+
+The next-edition card is now presented as a private advance proof in the destination publication’s palette. An unlocked folio `09`, controlled-access language, subtle issue coding, low-contrast security pattern, and an oversized watermark make the reward feel genuinely reserved without hiding the headline or pre-empting the later interactive reveal work.
+
+Sharing was considered and deliberately omitted: the completion moment is a private reader ritual, not a social scorecard. The surrounding metrics are now gathered into a ruled “Reader’s record” with the cadence of a newspaper colophon. Language such as “issue filed”, “reading rhythm”, and “reader’s seal” keeps streaks, XP, and collection progress legible while removing the tone of a game results screen; the advance proof remains the singular visual reward.
 
 ## 3. Add a reading identity
 

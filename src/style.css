@@ -251,12 +251,6 @@ body{min-height:100svh;overscroll-behavior-y:none;-webkit-tap-highlight-color:tr
 .completion .stats>div{padding:17px 12px 17px 0}
 .completion .stats>div+div{padding-left:12px;border-left:1px solid #ffffff20}
 .completion .stats strong{font-size:24px;white-space:nowrap}
-.completion-preview{margin:20px 0 18px;padding:17px 17px 19px;border-radius:10px;background:color-mix(in srgb,var(--publication-brand) 10%,var(--edition-bg));border:1px solid color-mix(in srgb,var(--publication-brand) 24%,transparent)}
-.achievement-row{display:flex;align-items:center;gap:12px;margin:17px 0 18px;padding:12px;border-radius:9px;background:color-mix(in srgb,var(--publication-brand) 7%,var(--edition-bg));border:1px solid color-mix(in srgb,var(--publication-brand) 17%,transparent)}.achievement-icon{width:31px;height:31px;border-radius:50%;display:grid;place-items:center;background:var(--publication-brand);color:var(--publication-brand-ink);font-size:17px}.achievement-row div{display:flex;flex-direction:column;gap:2px;flex:1}.achievement-row strong{font-size:12px}.achievement-row small{font-size:10px;color:color-mix(in srgb,var(--edition-ink) 61%,var(--edition-bg))}.achievement-check{font-size:17px;color:var(--publication-brand)}
-.completion-preview-label{display:flex;justify-content:space-between;color:var(--publication-brand);font-size:9px;letter-spacing:1.5px;font-weight:800}
-.completion-preview>small{display:block;margin-top:14px;color:color-mix(in srgb,var(--edition-ink) 58%,var(--edition-bg));font-size:9px;letter-spacing:1.2px}
-.completion-preview h2{font-family:'Manrope',sans-serif;font-size:23px;line-height:1.12;letter-spacing:-.8px;margin:13px 0 7px}
-.completion-preview p{margin:0;font-size:13px;line-height:1.45;color:color-mix(in srgb,var(--edition-ink) 72%,var(--edition-bg))}
 .completion-secondary{width:100%;padding:13px;background:transparent;color:color-mix(in srgb,var(--edition-ink) 72%,var(--edition-bg));font-size:11px;letter-spacing:.8px}
 .completion-network-cue{width:100%;margin-top:18px;padding:13px 4px 2px;border-top:1px solid #ffffff20;background:transparent;display:flex;align-items:center;justify-content:center;gap:10px;color:#dfe2d6}
 .completion-network-cue:hover{filter:none!important;color:#fff}

@@ -10,6 +10,7 @@
   import ResponsiveImage from './ResponsiveImage.svelte';
   import EditionCard from './EditionCard.svelte';
   import HalfwayMoment from './HalfwayMoment.svelte';
+  import FinalArticleMoment from './FinalArticleMoment.svelte';
 
   let pub = $derived(currentPub());
   let index = $derived(storyIndex());
@@ -18,6 +19,7 @@
   let expanded = $derived(pubExpanded().includes(story.id));
   let collected = $derived(pubCollected().includes(story.id));
   let collectedCount = $derived(getStories().filter(item => pubCollected().includes(item.id)).length);
+  let finalArticle = $derived(!ad && index === getStories().length - 1);
   let halfway = $derived(halfwayProgress());
   const halfwayOnArrival = untrack(() => halfway.reached);
   let pauseForHalfway = $derived(!ad && index === halfway.target - 1 && halfway.reached && !halfwayOnArrival);
@@ -40,6 +42,9 @@
       frame = 0;
       if (demo.sheet || !readerIsAtBottom()) { clearTimer(); return; }
       if (!ad) collect(story.id);
+      // The last story ends at a deliberate finish line. The reader chooses
+      // when to open the unlocked preview instead of being hurried into it.
+      if (finalArticle) { clearTimer(); return; }
       // Let a newly earned midpoint breathe. Continue, swipe, and arrow-key
       // navigation remain available; revisits keep normal auto-advancement.
       if (pauseForHalfway) { clearTimer(); return; }
@@ -114,7 +119,9 @@
       {/each}
     </div>
     {#if !expanded}<ScrollUnlock storyId={story.id} accent={pub.brand} />{/if}
-    {#if index === halfway.target - 1}
+    {#if finalArticle}
+      <FinalArticleMoment storyId={story.id} {collected} />
+    {:else if index === halfway.target - 1}
       <HalfwayMoment progress={halfway} />
     {:else}
     <div class="article-collection-receipt" class:receipt-collected={collected}>

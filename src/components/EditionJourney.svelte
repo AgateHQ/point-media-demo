@@ -10,13 +10,14 @@
   let opened = $derived(stories.filter(story => visited.includes(story.id)).length);
   let halfway = $derived(halfwayProgress());
   let atMidpoint = $derived(!complete && !partner && current === halfway.target);
+  let atFinish = $derived(!complete && !partner && current === stories.length);
   let caption = $derived(complete ? 'Your secret preview is unlocked' : partner ? 'A reward between stories'
-    : atMidpoint ? halfway.reached ? 'Halfway milestone reached' : 'The halfway chapter' : 'Your daily edition');
+    : atFinish ? 'The final story' : atMidpoint ? halfway.reached ? 'Halfway milestone reached' : 'The halfway chapter' : 'Your daily edition');
   let announcement = $derived(complete ? `Edition complete. ${stories.length} of ${stories.length} articles. Bonus preview unlocked.`
     : partner ? `Partner moment. ${opened} of ${stories.length} articles opened.` : `Article ${current} of ${stories.length}.`);
 </script>
 
-<section class="edition-journey" class:journey-complete={complete} class:journey-partner={partner} aria-label="Edition journey">
+<section class="edition-journey" class:journey-complete={complete} class:journey-partner={partner} class:journey-finish={atFinish} aria-label="Edition journey">
   <div class="journey-heading">
     <div class="journey-title">
       <span class="journey-eyebrow">Today’s journey</span>
@@ -117,6 +118,8 @@
   .journey-bonus-label { color: var(--journey-quiet); font-size: .75rem; line-height: 1.3; text-align: center; }
   .journey-complete .journey-bonus-marker { background: var(--publication-brand); color: #fff; border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--publication-brand) 12%, transparent); }
   .journey-complete .journey-bonus-label { color: var(--publication-brand); font-weight: 700; }
+  .journey-finish .journey-caption { color: var(--publication-brand); font-weight: 700; }
+  .journey-finish .journey-bonus-marker { border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--publication-brand) 8%, transparent); }
   .journey-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
   @media (min-width: 601px) {

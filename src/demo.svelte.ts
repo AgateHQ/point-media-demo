@@ -10,6 +10,7 @@ export interface State {
   screen: 'reader' | 'complete' | 'network';
   expanded: Record<string, string[]>;
   collected: Record<string, string[]>;
+  readingDays: string[];
   publication: string;
 }
 export interface BeforeInstallPromptEvent extends Event {
@@ -18,15 +19,33 @@ export interface BeforeInstallPromptEvent extends Event {
 }
 export type SheetKind = 'discover' | 'network' | 'wallet' | 'install' | 'collection';
 const storageKey = 'the-point-demo-v3';
-export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, collected: {}, publication: 'the-scoop' });
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+function localDay(offset: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + offset);
+  return date;
+}
+function starterReadingDays() { return [-3, -2, -1].map(offset => localDateKey(localDay(offset))); }
+export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, collected: {}, readingDays: starterReadingDays(), publication: 'the-scoop' });
 
 function isStoryMap(value: unknown): value is Record<string, string[]> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
     && Object.values(value).every(ids => Array.isArray(ids) && ids.every(id => typeof id === 'string'));
 }
+function isReadingDays(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(day => typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day));
+}
 function restore(): State {
   try {
     const s = JSON.parse(localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey) || 'null');
+    const hadReadingDays = isReadingDays(s?.readingDays);
+    if (s && !hadReadingDays) s.readingDays = starterReadingDays();
     if (s && typeof s.publication === 'string') s.publication = legacyPublicationIds[s.publication] || s.publication;
     if (s && isStoryMap(s.visited) && isStoryMap(s.expanded)) {
       // Existing saves keep their reading progress; cards are earned from here on.
@@ -42,7 +61,7 @@ function restore(): State {
     }
     if (s && typeof s.paid === 'boolean' && typeof s.reward === 'boolean'
       && Number.isFinite(s.balance) && Number.isInteger(s.position) && s.position >= 0 && s.position <= 8
-      && isStoryMap(s.visited) && isStoryMap(s.expanded)
+      && isStoryMap(s.visited) && isStoryMap(s.expanded) && isReadingDays(s.readingDays)
       && ['cover', 'reader', 'complete', 'network'].includes(s.screen)
       && publications.some(p => p.id === s.publication)) {
       // Older saved editions may still point to the removed opening cover.
@@ -54,6 +73,10 @@ function restore(): State {
       // Keep the bonus page after reload; incomplete older states resume reading.
       if (s.screen === 'complete' && !publications.find(p => p.id === s.publication)!.storyOrder
         .every(i => s.visited[s.publication]?.includes(stories[i].id))) s.screen = 'reader';
+      s.readingDays = [...new Set(s.readingDays)].sort().slice(-366);
+      // Preserve the previous demo's established streak when upgrading a save
+      // that is already sitting on today's completed edition.
+      if (!hadReadingDays && s.screen === 'complete') s.readingDays.push(localDateKey());
       return s;
     }
   } catch { /* Storage may be unavailable in a private browser session. */ }
@@ -77,6 +100,62 @@ export function storyIndex() { return demo.data.position > 4 ? demo.data.positio
 export function pubVisited() { return demo.data.visited[demo.data.publication] || []; }
 export function pubExpanded() { return demo.data.expanded[demo.data.publication] || []; }
 export function pubCollected() { return demo.data.collected[demo.data.publication] || []; }
+export const xpRules = { unlock: 2, fullRead: 8, editionComplete: 20 } as const;
+export interface EditionXpSummary {
+  unlockCount: number;
+  fullReadCount: number;
+  unlockXp: number;
+  fullReadXp: number;
+  completionXp: number;
+  total: number;
+}
+export function editionXp(publicationId = demo.data.publication): EditionXpSummary {
+  const publication = publications.find(item => item.id === publicationId);
+  if (!publication) return { unlockCount: 0, fullReadCount: 0, unlockXp: 0, fullReadXp: 0, completionXp: 0, total: 0 };
+  const ids = publication.storyOrder.map(index => stories[index].id);
+  const expanded = new Set(demo.data.expanded[publicationId] || []);
+  const collected = new Set(demo.data.collected[publicationId] || []);
+  const visited = new Set(demo.data.visited[publicationId] || []);
+  const unlockCount = ids.filter(id => expanded.has(id)).length;
+  const fullReadCount = ids.filter(id => collected.has(id)).length;
+  const unlockXp = unlockCount * xpRules.unlock;
+  const fullReadXp = fullReadCount * xpRules.fullRead;
+  const completionXp = ids.every(id => visited.has(id)) ? xpRules.editionComplete : 0;
+  return { unlockCount, fullReadCount, unlockXp, fullReadXp, completionXp, total: unlockXp + fullReadXp + completionXp };
+}
+export function networkXp() { return publications.reduce((total, publication) => total + editionXp(publication.id).total, 0); }
+export interface RecentReadingDay { key: string; label: string; date: string; read: boolean; today: boolean; }
+function addTodayToReadingHistory() {
+  const today = localDateKey();
+  if (demo.data.readingDays.includes(today)) return false;
+  demo.data.readingDays.push(today);
+  demo.data.readingDays = [...new Set(demo.data.readingDays)].sort().slice(-366);
+  return true;
+}
+export function readingStreak() {
+  const read = new Set(demo.data.readingDays);
+  const cursor = localDay(0);
+  if (!read.has(localDateKey(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+    if (!read.has(localDateKey(cursor))) return 0;
+  }
+  let streak = 0;
+  while (read.has(localDateKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+export function recentReadingHistory(length = 7): RecentReadingDay[] {
+  const read = new Set(demo.data.readingDays);
+  const weekday = new Intl.DateTimeFormat('en-GB', { weekday: 'short' });
+  return Array.from({ length }, (_, index) => {
+    const offset = index - length + 1;
+    const day = localDay(offset);
+    const key = localDateKey(day);
+    return { key, label: offset === 0 ? 'Today' : weekday.format(day), date: String(day.getDate()), read: read.has(key), today: offset === 0 };
+  });
+}
 export function halfwayProgress() {
   const edition = getStories();
   const target = Math.ceil(edition.length / 2);
@@ -178,6 +257,7 @@ export function move(delta: number) {
   return turnEdition(() => {
     demo.data.position = position;
     demo.data.screen = screen;
+    if (screen === 'complete' && addTodayToReadingHistory()) persist();
     mark();
   }, direction, !demo.sheet);
 }
