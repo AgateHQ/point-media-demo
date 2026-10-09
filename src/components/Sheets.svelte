@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { demo, selectPublication, topup, reset, isIos, isSafari, notify } from '../demo.svelte';
+  import { demo, currentPub, selectPublication, topup, reset, isIos, isSafari, notify } from '../demo.svelte';
   import { publications, money } from '../data';
   import Icon from './Icon.svelte';
   import PublicationLogo from './PublicationLogo.svelte';
+  import EditionCollection from './EditionCollection.svelte';
+  let pub = $derived(currentPub());
   let Discover = $state.raw<typeof import('./Discover.svelte').default | null>(null);
   let discoverLoading: Promise<void> | undefined;
   let sheet: HTMLDialogElement;
@@ -11,7 +13,7 @@
   let slideToEdition = $state(false);
   let timer = 0;
   let unlockedCount = $derived(Object.values(demo.data.expanded).reduce((total, ids) => total + new Set(ids).size, 0));
-  let label = $derived(demo.sheet === 'discover' ? 'Discover publications' : demo.sheet === 'network' ? 'Choose a publication' : demo.sheet === 'install' ? 'Install app instructions' : demo.sheet === 'wallet' ? 'Axate wallet' : 'Network title preview');
+  let label = $derived(demo.sheet === 'discover' ? 'Discover publications' : demo.sheet === 'network' ? 'Choose a publication' : demo.sheet === 'collection' ? 'Your daily story collection' : demo.sheet === 'install' ? 'Install app instructions' : demo.sheet === 'wallet' ? 'Axate wallet' : 'Network title preview');
 
   $effect(() => {
     if (demo.sheet === 'discover' && !Discover && !discoverLoading) {
@@ -63,12 +65,15 @@
   }
 </script>
 
-<dialog id="sheet" bind:this={sheet} use:events class={demo.sheet ? `${demo.sheet}-sheet` : ''} class:closing class:slide-to-edition={slideToEdition} aria-label={label}>
+<dialog id="sheet" bind:this={sheet} use:events class={demo.sheet ? `${demo.sheet}-sheet` : ''} class:closing class:slide-to-edition={slideToEdition} aria-label={label}
+  style={demo.sheet === 'collection' ? `--edition-bg:${pub.color};--edition-ink:${pub.ink};--publication-brand:${pub.brand}` : undefined}>
   {#if demo.sheet === 'discover'}
     {#if Discover}<Discover onclose={close} onenter={enter} />{:else}<div class="discover-chrome"><span role="status">Loading…</span><button class="close" onclick={close} aria-label="Close discover">×</button></div>{/if}
   {:else if demo.sheet}
     <div class="sheet-handle"></div><button class="close" onclick={close} aria-label="Close dialog">×</button>
-    {#if demo.sheet === 'network'}
+    {#if demo.sheet === 'collection'}
+      <EditionCollection />
+    {:else if demo.sheet === 'network'}
       <span class="eyebrow">THE AXATE NETWORK</span><h2>Choose your<br />next read.</h2><p>Your wallet and reading progress travel with you.</p>
       <div class="network-sheet-publications">
         {#each publications as p (p.id)}

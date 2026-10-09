@@ -1,4 +1,5 @@
-import { publications, stories, nextPublicationId, legacyPublicationIds } from './data';
+import { publications, stories, legacyPublicationIds } from './data';
+import { settleEditionTurn, turnEdition } from './editionNavigation';
 
 export interface State {
   paid: boolean;
@@ -8,15 +9,16 @@ export interface State {
   reward: boolean;
   screen: 'reader' | 'complete' | 'network';
   expanded: Record<string, string[]>;
+  collected: Record<string, string[]>;
   publication: string;
 }
 export interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
-export type SheetKind = 'discover' | 'network' | 'wallet' | 'install';
+export type SheetKind = 'discover' | 'network' | 'wallet' | 'install' | 'collection';
 const storageKey = 'the-point-demo-v3';
-export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, publication: 'the-scoop' });
+export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, collected: {}, publication: 'the-scoop' });
 
 function isStoryMap(value: unknown): value is Record<string, string[]> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
@@ -27,7 +29,9 @@ function restore(): State {
     const s = JSON.parse(localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey) || 'null');
     if (s && typeof s.publication === 'string') s.publication = legacyPublicationIds[s.publication] || s.publication;
     if (s && isStoryMap(s.visited) && isStoryMap(s.expanded)) {
-      for (const field of ['visited', 'expanded']) {
+      // Existing saves keep their reading progress; cards are earned from here on.
+      s.collected = isStoryMap(s.collected) ? s.collected : {};
+      for (const field of ['visited', 'expanded', 'collected']) {
         for (const [oldId, newId] of Object.entries(legacyPublicationIds)) {
           if (s[field][oldId]) {
             s[field][newId] = [...new Set([...(s[field][newId] || []), ...s[field][oldId]])];
@@ -47,13 +51,9 @@ function restore(): State {
         s.position = 0;
       }
       if (s.screen === 'network') s.screen = 'reader';
-      if (s.screen === 'complete') {
-        if (new Set(s.visited[s.publication] || []).size === 8) {
-          s.publication = nextPublicationId(s.publication);
-          s.position = 0;
-        }
-        s.screen = 'reader';
-      }
+      // Keep the bonus page after reload; incomplete older states resume reading.
+      if (s.screen === 'complete' && !publications.find(p => p.id === s.publication)!.storyOrder
+        .every(i => s.visited[s.publication]?.includes(stories[i].id))) s.screen = 'reader';
       return s;
     }
   } catch { /* Storage may be unavailable in a private browser session. */ }
@@ -76,6 +76,36 @@ export function getStories() { return currentPub().storyOrder.map(i => stories[i
 export function storyIndex() { return demo.data.position > 4 ? demo.data.position - 1 : demo.data.position; }
 export function pubVisited() { return demo.data.visited[demo.data.publication] || []; }
 export function pubExpanded() { return demo.data.expanded[demo.data.publication] || []; }
+export function pubCollected() { return demo.data.collected[demo.data.publication] || []; }
+export function halfwayProgress() {
+  const edition = getStories();
+  const target = Math.ceil(edition.length / 2);
+  const collected = pubCollected();
+  const firstHalf = edition.slice(0, target);
+  const count = firstHalf.filter(story => collected.includes(story.id)).length;
+  return { firstHalf, secondHalf: edition.slice(target), collected, count, target, total: edition.length, reached: count === target };
+}
+export function collect(id: string) {
+  if (demo.data.screen !== 'reader' || demo.data.position === 4 || getStories()[storyIndex()]?.id !== id
+    || !pubExpanded().includes(id) || pubCollected().includes(id)) return;
+  demo.data.collected[demo.data.publication] ||= [];
+  demo.data.collected[demo.data.publication].push(id);
+  persist();
+}
+export function openStory(id: string) {
+  settleEditionTurn();
+  const index = getStories().findIndex(story => story.id === id);
+  if (index < 0) return;
+  const position = index >= 4 ? index + 1 : index;
+  const direction = demo.data.screen === 'complete' || position < demo.data.position ? 'backward' : 'forward';
+  const animate = !demo.sheet && (demo.data.screen !== 'reader' || position !== demo.data.position);
+  return turnEdition(() => {
+    demo.data.position = position;
+    demo.data.screen = 'reader';
+    demo.sheet = null;
+    mark();
+  }, direction, animate);
+}
 export function persist() {
   const json = JSON.stringify(demo.data);
   try { localStorage.setItem(storageKey, json); } catch { /* Fall back to session storage. */ }
@@ -107,39 +137,49 @@ export function showWalletChange(amount: string, kind: 'spent' | 'received') {
   walletTimer = window.setTimeout(() => { demo.walletChange = { amount: '', kind: '' }; }, 1250);
 }
 export function openSheet(kind: SheetKind) {
+  settleEditionTurn();
   if (kind === 'discover') demo.discoverIndex = Math.max(0, publications.findIndex(p => p.id === demo.data.publication));
   demo.sheet = kind;
 }
 export function home() {
-  demo.data.screen = 'reader';
-  demo.data.position = 0;
-  mark();
-  window.scrollTo(0, 0);
+  return openStory(getStories()[0].id);
 }
-export function start() { demo.data.paid = true; demo.data.screen = 'reader'; mark(); }
+export function start() {
+  return turnEdition(() => { demo.data.paid = true; demo.data.screen = 'reader'; mark(); }, 'forward', false);
+}
 export function selectPublication(id: string, close = true) {
   if (!publications.some(p => p.id === id)) return;
-  demo.data.publication = id;
-  demo.discoverIndex = publications.findIndex(p => p.id === id);
-  demo.data.position = 0;
-  demo.data.screen = 'reader';
-  if (close) demo.sheet = null;
-  mark();
+  // Publication discovery already has its own sheet transition.
+  return turnEdition(() => {
+    demo.data.publication = id;
+    demo.discoverIndex = publications.findIndex(p => p.id === id);
+    demo.data.position = 0;
+    demo.data.screen = 'reader';
+    if (close) demo.sheet = null;
+    mark();
+  }, 'forward', false);
 }
 export function move(delta: number) {
+  settleEditionTurn();
   if (demo.data.screen !== 'reader') return;
   if (delta < 0 && demo.data.position === 0) return;
+  let position = Math.max(0, Math.min(8, demo.data.position + delta));
+  let screen: State['screen'] = 'reader';
   if (delta > 0 && demo.data.position === 8) {
     if (pubVisited().length === 8) {
-      demo.data.screen = 'complete';
-      persist();
-      return;
+      screen = 'complete';
     } else {
       const missing = getStories().findIndex(st => !pubVisited().includes(st.id));
-      demo.data.position = missing >= 4 ? missing + 1 : missing;
+      position = missing >= 4 ? missing + 1 : missing;
     }
-  } else demo.data.position = Math.max(0, Math.min(8, demo.data.position + delta));
-  mark();
+  }
+  if (position === demo.data.position && screen === demo.data.screen) return;
+  const direction = screen === 'complete' || position > demo.data.position ? 'forward' : 'backward';
+  return turnEdition(() => {
+    demo.data.position = position;
+    demo.data.screen = screen;
+    mark();
+  }, direction, !demo.sheet);
 }
 export function topup() {
   demo.data.balance += 100;
@@ -174,10 +214,12 @@ export function claim() {
   notify('10p added to your wallet. Nice.', walletAnchor());
 }
 export function reset() {
-  demo.sheet = null;
-  demo.data = fresh();
-  demo.discoverIndex = 0;
-  mark();
+  turnEdition(() => {
+    demo.sheet = null;
+    demo.data = fresh();
+    demo.discoverIndex = 0;
+    mark();
+  }, 'forward', false);
   notify('Fresh edition. Balance reset to £1.00.');
 }
 export const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -199,11 +241,11 @@ export function registerModelTools() {
   if (!context) return () => {};
   const tools = [
     { name: 'read_demo_edition', description: 'Read the current fictional edition progress, automatically opened articles, rewards, and simulated wallet balance.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => ({ ...$state.snapshot(demo.data), visited: [...pubVisited()] }) },
-    { name: 'navigate_demo_story', description: 'Move to the next or previous story in the automatic demo reading flow. Articles open and simulated 20p charges happen as the reader scrolls.', inputSchema: { type: 'object', properties: { direction: { type: 'string', enum: ['next', 'previous'] } }, required: ['direction'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: (input: unknown) => {
+    { name: 'navigate_demo_story', description: 'Move to the next or previous story in the automatic demo reading flow. Articles open and simulated 20p charges happen as the reader scrolls.', inputSchema: { type: 'object', properties: { direction: { type: 'string', enum: ['next', 'previous'] } }, required: ['direction'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
       const value = input as { direction?: unknown };
       if (!value || !['next', 'previous'].includes(String(value.direction))) throw new Error('Direction must be next or previous');
       if (demo.data.screen !== 'reader') throw new Error('Open the edition reader first');
-      move(value.direction === 'next' ? 1 : -1);
+      await move(value.direction === 'next' ? 1 : -1);
       return { screen: demo.data.screen, position: demo.data.position, visited: pubVisited().length };
     } },
   ];

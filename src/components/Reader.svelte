@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { demo, currentPub, getStories, storyIndex, pubVisited, pubExpanded, home, claim, move } from '../demo.svelte';
+  import { onMount, untrack } from 'svelte';
+  import { demo, currentPub, getStories, storyIndex, pubExpanded, pubCollected, halfwayProgress, collect, home, claim, move, openSheet } from '../demo.svelte';
   import { articlePreview, storyVideos, storySections } from '../data';
   import imageAssets from '../image-assets.json';
   import { readerIsAtBottom } from '../gestures';
@@ -8,13 +8,19 @@
   import BackgroundVideo from './BackgroundVideo.svelte';
   import ScrollUnlock from './ScrollUnlock.svelte';
   import ResponsiveImage from './ResponsiveImage.svelte';
+  import EditionCard from './EditionCard.svelte';
+  import HalfwayMoment from './HalfwayMoment.svelte';
 
   let pub = $derived(currentPub());
   let index = $derived(storyIndex());
   let story = $derived(getStories()[index]);
   let ad = $derived(demo.data.position === 4);
   let expanded = $derived(pubExpanded().includes(story.id));
-  let visited = $derived(pubVisited());
+  let collected = $derived(pubCollected().includes(story.id));
+  let collectedCount = $derived(getStories().filter(item => pubCollected().includes(item.id)).length);
+  let halfway = $derived(halfwayProgress());
+  const halfwayOnArrival = untrack(() => halfway.reached);
+  let pauseForHalfway = $derived(!ad && index === halfway.target - 1 && halfway.reached && !halfwayOnArrival);
   let videoId = $derived(!ad ? storyVideos[`${pub.id}:${story.id}`] : '');
   let parts = $derived((expanded ? story.expandedBody : articlePreview(story)).split('\n\n'));
   let section = $derived(storySections[story.id] || 'News');
@@ -26,13 +32,17 @@
   });
 
   $effect(() => {
-    if (ad ? !demo.data.reward : !expanded) return;
+    if ((ad ? !demo.data.reward : !expanded) || pauseForHalfway) return;
     let frame = 0;
     let timer = 0;
     const clearTimer = () => { if (timer) window.clearTimeout(timer); timer = 0; };
     const update = () => {
       frame = 0;
       if (demo.sheet || !readerIsAtBottom()) { clearTimer(); return; }
+      if (!ad) collect(story.id);
+      // Let a newly earned midpoint breathe. Continue, swipe, and arrow-key
+      // navigation remain available; revisits keep normal auto-advancement.
+      if (pauseForHalfway) { clearTimer(); return; }
       if (!timer) timer = window.setTimeout(() => {
         timer = 0;
         if (!demo.sheet && readerIsAtBottom()) move(1);
@@ -58,9 +68,6 @@
     <ResponsiveImage class="story-image" image="20260603-R0000419" alt="Sponsored content" priority="high" />
     <div class="image-shade"></div>
     <div class="reader-top">
-      <div class="progress" aria-label={`${visited.length} of 8 stories visited`}>
-        {#each getStories() as st (st.id)}<span class:seen={visited.includes(st.id)}></span>{/each}
-      </div>
       <div class="reader-meta"><button onclick={home} aria-label="Back to first article" class="back-arrow"><Icon /></button><span>PARTNER MOMENT</span></div>
     </div>
     <div class="story-visual-copy"><span class="pill">SPONSORED</span><h1>Good nights.<br /><em>Good rewards.</em></h1><span class="story-scroll-cue" aria-hidden="true"><Icon /></span></div>
@@ -74,13 +81,12 @@
   <article class="story-content article-page" class:expanded data-story-id={story.id}>
     <div class="article-tools">
       <button onclick={home} class="article-back" aria-label="Back to first article"><Icon /><span>First article</span></button>
-      <div class="article-edition-progress">
-        <span>{String(index + 1).padStart(2, '0')} / 08</span>
-        <div class="progress" aria-label={`${visited.length} of 8 stories visited`}>
-          {#each getStories() as st, i (st.id)}<span class:seen={visited.includes(st.id)} class:active={i === index}></span>{/each}
-        </div>
-      </div>
+      <button class="article-set-button" onclick={() => openSheet('collection')} aria-label={`View your daily set, ${collectedCount} of ${getStories().length} cards collected`}>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="3" width="5" height="6" rx=".5" /><rect x="12" y="3" width="5" height="6" rx=".5" /><rect x="3" y="12" width="5" height="5" rx=".5" /><rect x="12" y="12" width="5" height="5" rx=".5" /></svg>
+        <span>Your set</span><strong>{collectedCount} / {getStories().length}</strong>
+      </button>
     </div>
+    <EditionCard {story} number={index + 1} total={getStories().length} {collected}>
     <header class="article-head">
       <div class="article-kicker">
         <span class="article-label">{#if pub.id === 'the-scoop'}<span aria-hidden="true">★</span>{/if}{story.tag}</span>
@@ -98,6 +104,7 @@
       </div>
       <figcaption><span>{section} · {pub.name}</span><span>Photo: Alexander London</span></figcaption>
     </figure>
+    </EditionCard>
     <div class="article-copy">
       <p class="article-lede">{story.body}</p>
       {#each parts as paragraph, i (i)}
@@ -107,6 +114,14 @@
       {/each}
     </div>
     {#if !expanded}<ScrollUnlock storyId={story.id} accent={pub.brand} />{/if}
-    <div class="article-endnote"><span class="article-end-mark" aria-hidden="true"></span><span>{pub.name} · Your daily edition</span></div>
+    {#if index === halfway.target - 1}
+      <HalfwayMoment progress={halfway} />
+    {:else}
+    <div class="article-collection-receipt" class:receipt-collected={collected}>
+      <span class="receipt-mark" aria-hidden="true">{#if collected}<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4.5 10 3.5 3.5 7.5-7.5" /></svg>{:else}{String(index + 1).padStart(2, '0')}{/if}</span>
+      <div class="receipt-copy" aria-live="polite" aria-atomic="true"><strong>{collected ? 'One more perspective, collected.' : 'A story worth keeping.'}</strong><span>{collected ? `Card ${String(index + 1).padStart(2, '0')} is in your daily set.` : 'Finish the full story to add this card to your set.'}</span></div>
+      <button onclick={() => openSheet('collection')}>View your set</button>
+    </div>
+    {/if}
   </article>
 {/if}

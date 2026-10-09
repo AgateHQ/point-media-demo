@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount } from 'svelte';
   import { demo, currentPub, canInstall, isIos, install, notify, move, registerModelTools, type BeforeInstallPromptEvent } from './demo.svelte';
   import { readerGestures } from './gestures';
+  import { resetReaderScroll } from './editionNavigation';
   import Header from './components/Header.svelte';
   import Reader from './components/Reader.svelte';
   import Complete from './components/Complete.svelte';
+  import EditionJourney from './components/EditionJourney.svelte';
   import Toast from './components/Toast.svelte';
   import Icon from './components/Icon.svelte';
 
@@ -24,19 +26,13 @@
       });
     }
   });
-  $effect(() => {
-    navigationKey;
-    tick().then(() => {
-      document.querySelector<HTMLElement>('.reader')?.scrollTo(0, 0);
-      window.scrollTo(0, 0);
-    });
-  });
   function keydown(event: KeyboardEvent) {
     if (demo.sheet || demo.data.screen !== 'reader' || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
     if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1); }
   }
   onMount(() => {
+    resetReaderScroll();
     const beforeInstall = (event: Event) => { event.preventDefault(); demo.installPrompt = event as BeforeInstallPromptEvent; };
     const installed = () => { demo.installPrompt = null; demo.installed = true; notify('Installed. You can launch the demo from your Home Screen.'); };
     const registerWorker = () => {
@@ -61,6 +57,7 @@
   <Header />
   <main class="stage">
     <section class={`reader publication-${pub.id}`} class:paper-edition={paper} aria-label="Daily edition">
+      <EditionJourney />
       {#key navigationKey}
         {#if demo.data.screen === 'complete'}<Complete />{:else}<Reader />{/if}
       {/key}
