@@ -1,4 +1,5 @@
 import { flushSync } from 'svelte';
+import { reducedMotionPreference } from './motion';
 
 export type TurnDirection = 'forward' | 'backward';
 interface EditionTurn {
@@ -53,7 +54,7 @@ export function turnEdition(update: () => void, direction: TurnDirection, animat
     resetReaderScroll();
     if (document.documentElement.dataset.editionTurn) setTurnCanvas();
   };
-  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const motion = reducedMotionPreference();
   if (!animate || motion.matches) {
     apply();
     return Promise.resolve();

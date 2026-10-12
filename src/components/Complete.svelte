@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { demo, currentPub, editionXp, getStories, networkXp, pubCollected, readingInsight, readingStreak, recentReadingHistory, xpRules, home, openStory, openSheet, selectPublication } from '../demo.svelte';
   import { publications, stories, nextPublicationId } from '../data';
+  import { reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
   let pub = $derived(currentPub());
   let nextPub = $derived(publications.find(item => item.id === nextPublicationId(pub.id))!);
@@ -15,26 +16,159 @@
   let xp = $derived(editionXp());
   let allXp = $derived(networkXp());
   let insight = $derived(readingInsight());
+  const completionSequence = demo.completionSequence;
+  const completionMoment = demo.completionMoment;
+  const hasCompletionMoment = completionSequence > 0 && completionMoment.id === completionSequence;
+  const badgeShouldSettle = hasCompletionMoment && completionMoment.isNewCompletion;
+  const previewShouldReveal = hasCompletionMoment && completionMoment.isNewCompletion;
+  const streakChanged = hasCompletionMoment && completionMoment.streakFrom !== completionMoment.streakTo;
+  const xpChanged = hasCompletionMoment
+    && (completionMoment.editionXpFrom !== completionMoment.editionXpTo
+      || completionMoment.networkXpFrom !== completionMoment.networkXpTo);
   let completionPercent = $state(0);
+  let displayedStreak = $state(streakChanged ? completionMoment.streakFrom : readingStreak());
+  let displayedEditionXp = $state(xpChanged ? completionMoment.editionXpFrom : editionXp().total);
+  let displayedCompletionXp = $state(xpChanged ? 0 : editionXp().completionXp);
+  let displayedNetworkXp = $state(xpChanged ? completionMoment.networkXpFrom : networkXp());
+  let streakValuesRevealed = $state(!streakChanged);
+  let xpValuesRevealed = $state(!xpChanged);
+  let badgeSettled = $state(!badgeShouldSettle);
+  let previewRevealed = $state(!previewShouldReveal);
+  let streakCard: HTMLElement;
+  let xpLedger: HTMLElement;
+  let perfectBadge: HTMLElement;
+  let secretPreview: HTMLElement;
 
   onMount(() => {
-    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let frame = 0;
-    let started = 0;
-    const finish = () => { completionPercent = 100; if (frame) cancelAnimationFrame(frame); frame = 0; };
-    const draw = (time: number) => {
-      if (!started) started = time;
-      const progress = Math.max(0, Math.min(1, (time - started - 180) / 1100));
+    const motion = reducedMotionPreference();
+    let ringFrame = 0;
+    let streakFrame = 0;
+    let xpFrame = 0;
+    let ringStarted = 0;
+    let streakStarted = 0;
+    let xpStarted = 0;
+    let streakObserver: IntersectionObserver | undefined;
+    let xpObserver: IntersectionObserver | undefined;
+    let badgeObserver: IntersectionObserver | undefined;
+    let previewObserver: IntersectionObserver | undefined;
+    const finishRing = () => { completionPercent = 100; if (ringFrame) cancelAnimationFrame(ringFrame); ringFrame = 0; };
+    const finishStreak = () => {
+      displayedStreak = streak;
+      streakValuesRevealed = true;
+      if (streakFrame) cancelAnimationFrame(streakFrame);
+      streakFrame = 0;
+      streakObserver?.disconnect();
+      streakObserver = undefined;
+    };
+    const finishXp = () => {
+      displayedEditionXp = xp.total;
+      displayedCompletionXp = xp.completionXp;
+      displayedNetworkXp = allXp;
+      xpValuesRevealed = true;
+      if (xpFrame) cancelAnimationFrame(xpFrame);
+      xpFrame = 0;
+      xpObserver?.disconnect();
+      xpObserver = undefined;
+    };
+    const settleBadge = () => {
+      badgeSettled = true;
+      badgeObserver?.disconnect();
+      badgeObserver = undefined;
+    };
+    const revealPreview = () => {
+      previewRevealed = true;
+      previewObserver?.disconnect();
+      previewObserver = undefined;
+    };
+    const drawRing = (time: number) => {
+      if (!ringStarted) ringStarted = time;
+      const progress = Math.max(0, Math.min(1, (time - ringStarted - 180) / 1100));
       const eased = 1 - Math.pow(1 - progress, 3);
       completionPercent = Math.round(eased * 100);
-      if (progress < 1) frame = requestAnimationFrame(draw);
-      else frame = 0;
+      if (progress < 1) ringFrame = requestAnimationFrame(drawRing);
+      else ringFrame = 0;
     };
-    const motionChanged = () => { if (motion.matches) finish(); };
-    if (motion.matches) completionPercent = 100;
-    else frame = requestAnimationFrame(draw);
+    const drawStreak = (time: number) => {
+      if (!streakStarted) streakStarted = time;
+      const progress = Math.min(1, (time - streakStarted) / 680);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      displayedStreak = Math.round(completionMoment.streakFrom
+        + (completionMoment.streakTo - completionMoment.streakFrom) * eased);
+      if (progress < 1) streakFrame = requestAnimationFrame(drawStreak);
+      else streakFrame = 0;
+    };
+    const drawXp = (time: number) => {
+      if (!xpStarted) xpStarted = time;
+      const progress = Math.min(1, (time - xpStarted) / 720);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      displayedEditionXp = Math.round(completionMoment.editionXpFrom
+        + (completionMoment.editionXpTo - completionMoment.editionXpFrom) * eased);
+      displayedCompletionXp = Math.round(xp.completionXp * eased);
+      displayedNetworkXp = Math.round(completionMoment.networkXpFrom
+        + (completionMoment.networkXpTo - completionMoment.networkXpFrom) * eased);
+      if (progress < 1) xpFrame = requestAnimationFrame(drawXp);
+      else xpFrame = 0;
+    };
+    const revealStreak = () => {
+      streakValuesRevealed = true;
+      streakObserver?.disconnect();
+      streakObserver = undefined;
+      streakFrame = requestAnimationFrame(drawStreak);
+    };
+    const revealXp = () => {
+      xpValuesRevealed = true;
+      xpObserver?.disconnect();
+      xpObserver = undefined;
+      xpFrame = requestAnimationFrame(drawXp);
+    };
+    const motionChanged = () => {
+      if (motion.matches) { finishRing(); finishStreak(); finishXp(); settleBadge(); revealPreview(); }
+    };
+    if (motion.matches) finishRing();
+    else ringFrame = requestAnimationFrame(drawRing);
+    if (!motion.matches && streakChanged) {
+      if ('IntersectionObserver' in window) {
+        streakObserver = new IntersectionObserver(entries => {
+          if (entries.some(entry => entry.isIntersecting)) revealStreak();
+        }, { threshold: .35, rootMargin: '0px 0px -8% 0px' });
+        streakObserver.observe(streakCard);
+      } else revealStreak();
+    }
+    if (!motion.matches && xpChanged) {
+      if ('IntersectionObserver' in window) {
+        xpObserver = new IntersectionObserver(entries => {
+          if (entries.some(entry => entry.isIntersecting)) revealXp();
+        }, { threshold: .35, rootMargin: '0px 0px -8% 0px' });
+        xpObserver.observe(xpLedger);
+      } else revealXp();
+    }
+    if (badgeShouldSettle && !motion.matches) {
+      if ('IntersectionObserver' in window) {
+        badgeObserver = new IntersectionObserver(entries => {
+          if (entries.some(entry => entry.isIntersecting)) settleBadge();
+        }, { threshold: .35, rootMargin: '0px 0px -8% 0px' });
+        badgeObserver.observe(perfectBadge);
+      } else settleBadge();
+    }
+    if (previewShouldReveal && !motion.matches) {
+      if ('IntersectionObserver' in window) {
+        previewObserver = new IntersectionObserver(entries => {
+          if (entries.some(entry => entry.isIntersecting)) revealPreview();
+        }, { threshold: .28, rootMargin: '0px 0px -6% 0px' });
+        previewObserver.observe(secretPreview);
+      } else revealPreview();
+    }
     motion.addEventListener('change', motionChanged);
-    return () => { if (frame) cancelAnimationFrame(frame); motion.removeEventListener('change', motionChanged); };
+    return () => {
+      if (ringFrame) cancelAnimationFrame(ringFrame);
+      if (streakFrame) cancelAnimationFrame(streakFrame);
+      if (xpFrame) cancelAnimationFrame(xpFrame);
+      streakObserver?.disconnect();
+      xpObserver?.disconnect();
+      badgeObserver?.disconnect();
+      previewObserver?.disconnect();
+      motion.removeEventListener('change', motionChanged);
+    };
   });
 
   function again() { home(); }
@@ -82,12 +216,15 @@
         <p>{insight.detail}</p>
       </div>
     </aside>
-    <section class="streak-card" aria-labelledby="streak-title" data-reading-streak>
+    <section bind:this={streakCard} class="streak-card"
+      class:streak-values-waiting={streakChanged && !streakValuesRevealed}
+      class:streak-values-revealed={streakChanged && streakValuesRevealed}
+      aria-labelledby="streak-title" data-reading-streak>
     <div class="streak-summary">
       <span class="streak-flame" class:flame-lit={streak > 0} aria-hidden="true">
         <svg viewBox="0 0 40 48" fill="none"><path class="flame-outer" d="M21 2c2 9-4 12-2 19 2-3 5-5 8-6 0 6 8 9 8 18 0 8-6 13-15 13S5 41 5 32c0-8 5-13 10-18 1 5 2 7 4 8-2-8 4-12 2-20Z" /><path class="flame-inner" d="M21 25c1 5-4 7-2 12 1-2 3-3 5-4 1 2 3 4 3 7 0 4-3 6-7 6s-7-3-7-7c0-5 4-8 6-11 0 3 1 5 2 6 0-3 1-5 0-9Z" /></svg>
       </span>
-      <div><span>Reading rhythm</span><h2 id="streak-title">{streak} consecutive {streak === 1 ? 'day' : 'days'}</h2><p>{streak > 1 ? `${streak} daily editions, read without a break.` : 'The first entry in a new reading run.'}</p></div>
+      <div><span>Reading rhythm</span><h2 id="streak-title" aria-label={`${streak} consecutive ${streak === 1 ? 'day' : 'days'}`}><span class="streak-value" aria-hidden="true">{displayedStreak}</span> consecutive {displayedStreak === 1 ? 'day' : 'days'}</h2><p>{streak > 1 ? `${streak} daily editions, read without a break.` : 'The first entry in a new reading run.'}</p></div>
     </div>
     <ol class="streak-history" aria-label="Recent reading days">
       {#each recentDays as day (day.key)}
@@ -97,19 +234,24 @@
       {/each}
     </ol>
     </section>
-    <section class="xp-ledger" aria-labelledby="xp-title" data-edition-xp>
+    <section bind:this={xpLedger} class="xp-ledger"
+      class:xp-values-waiting={xpChanged && !xpValuesRevealed}
+      class:xp-values-revealed={xpChanged && xpValuesRevealed}
+      aria-labelledby="xp-title" data-edition-xp>
     <header class="xp-heading">
       <div><span>Edition ledger</span><h2 id="xp-title">Reading credit</h2></div>
-      <strong><span aria-hidden="true">+</span>{xp.total}<small> XP</small></strong>
+      <strong aria-label={`+${xp.total} XP earned`}><span class="xp-plus" aria-hidden="true">+</span><span class="xp-counted-value" aria-hidden="true">{displayedEditionXp}</span><small aria-hidden="true"> XP</small></strong>
     </header>
     <dl class="xp-breakdown">
       <div><dt>Opened<small>{xp.unlockCount} × {xpRules.unlock} XP</small></dt><dd>+{xp.unlockXp}</dd></div>
       <div><dt>Finished<small>{xp.fullReadCount} × {xpRules.fullRead} XP</small></dt><dd>+{xp.fullReadXp}</dd></div>
-      <div><dt>Issue filed<small>{xp.completionXp ? 'Edition closed' : 'Still reading'}</small></dt><dd>+{xp.completionXp}</dd></div>
+      <div class="xp-completion-line"><dt>Issue filed<small>{xp.completionXp ? 'Edition closed' : 'Still reading'}</small></dt><dd aria-label={`+${xp.completionXp} XP`}><span aria-hidden="true">+<span class="xp-counted-value">{displayedCompletionXp}</span></span></dd></div>
     </dl>
-    <footer class="xp-total"><span>Network record</span><strong>{allXp} XP</strong><small>Each reading entry is recorded once; rereading never alters the total.</small></footer>
+    <footer class="xp-total"><span>Network record</span><strong aria-label={`${allXp} XP`}><span class="xp-counted-value" aria-hidden="true">{displayedNetworkXp}</span> <span aria-hidden="true">XP</span></strong><small>Each reading entry is recorded once; rereading never alters the total.</small></footer>
     </section>
-    <section class="perfect-badge" class:perfect-earned={perfectEdition} aria-labelledby="perfect-badge-title" data-perfect-edition-badge>
+    <section bind:this={perfectBadge} class="perfect-badge" class:perfect-earned={perfectEdition}
+      class:perfect-badge-waiting={badgeShouldSettle && !badgeSettled} class:perfect-badge-settling={badgeShouldSettle && badgeSettled}
+      aria-labelledby="perfect-badge-title" data-perfect-edition-badge>
     <div class="perfect-seal" aria-hidden="true">
       <svg viewBox="0 0 88 96" fill="none">
         <path class="perfect-ribbon" d="m25 60-5 31 23-11L28 62m35-2 5 31-23-11 15-18" />
@@ -138,8 +280,12 @@
     </div>
     </section>
   </section>
-  <article class="secret-preview" aria-labelledby="secret-preview-title" data-secret-preview
+  <article bind:this={secretPreview} class="secret-preview"
+    class:secret-preview-waiting={previewShouldReveal && !previewRevealed}
+    class:secret-preview-revealing={previewShouldReveal && previewRevealed}
+    aria-labelledby="secret-preview-title" data-secret-preview
     style={`--secret-brand:${nextPub.brand};--secret-header:${nextPub.header};--secret-paper:${nextPub.color};--secret-ink:${nextPub.ink}`}>
+    <span class="secret-reveal-rule" aria-hidden="true"></span>
     <span class="secret-watermark" aria-hidden="true">09</span>
     <header class="secret-heading">
       <span class="secret-lock" aria-hidden="true">
@@ -219,6 +365,7 @@
   .streak-summary>div { min-width: 0; }
   .streak-summary>div>span { display: block; margin-bottom: 3px; color: var(--publication-brand); font-size: .5625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
   .streak-summary h2 { margin: 0; color: var(--edition-ink); font-family: 'Manrope', sans-serif; font-size: 1.125rem; font-weight: 800; line-height: 1.2; letter-spacing: -.03em; }
+  .streak-value { display: inline-block; min-width: .7em; font-variant-numeric: tabular-nums; transform-origin: bottom center; }
   .streak-summary p { margin: 4px 0 0; color: color-mix(in srgb, var(--edition-ink) 61%, var(--edition-bg)); font-size: .6875rem; line-height: 1.4; }
   .streak-history { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; margin: 15px 0 0; padding: 14px 0 0; border-top: 1px solid color-mix(in srgb, var(--publication-brand) 14%, transparent); list-style: none; }
   .streak-history li { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; color: color-mix(in srgb, var(--edition-ink) 43%, var(--edition-bg)); }
@@ -230,14 +377,20 @@
   .streak-history .day-read i { color: var(--publication-brand-ink); background: var(--publication-brand); border-color: var(--publication-brand); }
   .streak-history .day-today i { box-shadow: 0 0 0 3px color-mix(in srgb, var(--publication-brand) 10%, transparent); }
   .streak-history .day-today>span { color: var(--edition-ink); font-weight: 800; }
+  .streak-values-waiting .streak-value { opacity: .55; }
+  .streak-values-waiting .day-today i { opacity: .42; transform: scale(.82); }
+  .streak-values-revealed .streak-value { animation: reader-value-settle var(--motion-duration-composed) var(--motion-ease-enter) both; }
+  .streak-values-revealed .streak-flame { animation: streak-kindle calc(var(--motion-duration-composed) + var(--motion-duration-quick)) var(--motion-ease-enter) both; }
+  .streak-values-revealed .day-today i { animation: streak-day-filed var(--motion-duration-composed) var(--motion-duration-instant) var(--motion-ease-enter) both; }
   .xp-ledger { margin: 19px 0 20px; padding: 18px 17px 15px; border-top: 3px solid var(--publication-brand); border-right: 1px solid color-mix(in srgb, var(--publication-brand) 20%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 20%, transparent); border-left: 1px solid color-mix(in srgb, var(--publication-brand) 20%, transparent); border-radius: 3px; color: var(--edition-ink); background: color-mix(in srgb, var(--publication-brand) 3%, var(--edition-bg)); }
   .xp-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
   .xp-heading>div { display: flex; flex-direction: column; gap: 4px; }
   .xp-heading>div>span { color: var(--publication-brand); font-size: .5625rem; font-weight: 800; line-height: 1.2; letter-spacing: .13em; text-transform: uppercase; }
   .xp-heading h2 { margin: 0; color: var(--edition-ink); font-family: 'Manrope', sans-serif; font-size: 1.25rem; font-weight: 800; line-height: 1.1; letter-spacing: -.035em; }
   .xp-heading>strong { color: var(--publication-brand); font-family: 'Manrope', sans-serif; font-size: 2rem; font-weight: 800; line-height: .9; letter-spacing: -.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .xp-heading>strong>span { margin-right: 1px; font-size: 1rem; vertical-align: .25em; }
+  .xp-heading>strong>.xp-plus { margin-right: 1px; font-size: 1rem; vertical-align: .25em; }
   .xp-heading>strong>small { font-size: .625rem; letter-spacing: .06em; }
+  .xp-counted-value { display: inline-block; min-width: .7em; font-variant-numeric: tabular-nums; transform-origin: bottom center; }
   .xp-breakdown { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 16px 0 14px; padding: 14px 0; border-top: 1px solid color-mix(in srgb, var(--publication-brand) 16%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 16%, transparent); }
   .xp-breakdown>div { min-width: 0; padding: 0 11px; }
   .xp-breakdown>div:first-child { padding-left: 0; }
@@ -250,7 +403,12 @@
   .xp-total>span { color: color-mix(in srgb, var(--edition-ink) 60%, var(--edition-bg)); font-size: .625rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   .xp-total>strong { color: var(--edition-ink); font-size: .75rem; font-variant-numeric: tabular-nums; }
   .xp-total>small { grid-column: 1 / -1; color: color-mix(in srgb, var(--edition-ink) 49%, var(--edition-bg)); font-size: .5625rem; line-height: 1.4; }
-  .perfect-badge { display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; align-items: center; gap: 15px; margin: 19px 0 20px; padding: 17px 16px; border: 1px dashed color-mix(in srgb, var(--publication-brand) 30%, transparent); border-radius: 3px; color: var(--edition-ink); background: color-mix(in srgb, var(--publication-brand) 2.5%, var(--edition-bg)); }
+  .xp-values-waiting .xp-counted-value { opacity: .55; }
+  .xp-values-revealed .xp-heading .xp-counted-value { animation: reader-value-settle var(--motion-duration-composed) var(--motion-ease-enter) both; }
+  .xp-values-revealed .xp-completion-line { animation: xp-entry-filed calc(var(--motion-duration-composed) + var(--motion-duration-standard)) var(--motion-ease-standard) both; }
+  .xp-values-revealed .xp-completion-line .xp-counted-value { animation: reader-value-settle var(--motion-duration-composed) var(--motion-duration-instant) var(--motion-ease-enter) both; }
+  .xp-values-revealed .xp-total>strong { animation: xp-network-settle var(--motion-duration-composed) var(--motion-duration-quick) var(--motion-ease-enter) both; }
+  .perfect-badge { position: relative; display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; align-items: center; gap: 15px; margin: 19px 0 20px; padding: 17px 16px; overflow: hidden; border: 1px dashed color-mix(in srgb, var(--publication-brand) 30%, transparent); border-radius: 3px; color: var(--edition-ink); background: color-mix(in srgb, var(--publication-brand) 2.5%, var(--edition-bg)); }
   .perfect-seal { display: grid; place-items: center; width: 68px; height: 74px; color: color-mix(in srgb, var(--edition-ink) 35%, var(--edition-bg)); }
   .perfect-seal svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .perfect-ribbon { fill: color-mix(in srgb, var(--edition-ink) 5%, var(--edition-bg)); stroke: currentColor; stroke-width: 1.2; }
@@ -276,14 +434,25 @@
   .perfect-earned .perfect-rosette { fill: var(--publication-brand); stroke: var(--publication-brand); }
   .perfect-earned .perfect-seal circle { stroke: color-mix(in srgb, var(--publication-brand-ink) 70%, transparent); }
   .perfect-earned .perfect-kicker, .perfect-earned .perfect-meta>strong { color: var(--publication-brand); }
+  .perfect-badge-waiting { opacity: 0; transform: translateY(var(--motion-distance-medium)); }
+  .perfect-badge-settling { animation: perfect-badge-arrive var(--motion-duration-composed) var(--motion-ease-enter) both; }
+  .perfect-badge-settling .perfect-seal { animation: perfect-seal-arrive calc(var(--motion-duration-composed) + var(--motion-duration-quick)) var(--motion-duration-progress) var(--motion-ease-enter) both; }
+  .perfect-badge-settling .perfect-ribbon { transform-box: fill-box; transform-origin: top center; animation: perfect-ribbon-unfurl var(--motion-duration-composed) var(--motion-duration-instant) var(--motion-ease-enter) both; }
+  .perfect-badge-settling .perfect-rosette { transform-box: fill-box; transform-origin: center; animation: perfect-rosette-press var(--motion-duration-composed) var(--motion-duration-instant) var(--motion-ease-enter) both; }
+  .perfect-badge-settling .perfect-copy, .perfect-badge-settling .perfect-meta { animation: perfect-copy-arrive var(--motion-duration-standard) var(--motion-duration-quick) var(--motion-ease-enter) both; }
+  .perfect-earned.perfect-badge-settling .perfect-check { stroke-dasharray: 30; stroke-dashoffset: 30; animation: perfect-check-draw var(--motion-duration-standard) calc(var(--motion-duration-standard) + var(--motion-duration-instant)) var(--motion-ease-standard) forwards; }
+  .perfect-earned.perfect-badge-settling::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 27%, color-mix(in srgb, var(--publication-brand) 12%, transparent) 49%, transparent 70%); opacity: 0; transform: translateX(-115%); pointer-events: none; animation: perfect-badge-sweep calc(var(--motion-duration-composed) + var(--motion-duration-standard)) var(--motion-duration-quick) var(--motion-ease-standard) both; }
   .reader-record .streak-card, .reader-record .xp-ledger, .reader-record .perfect-badge { margin: 0; border: 0; border-top: 1px solid color-mix(in srgb, var(--edition-ink) 16%, transparent); border-radius: 0; background: transparent; box-shadow: none; }
   .reader-record .streak-card { padding: 19px 0 20px; }
   .reader-record .xp-ledger { padding: 20px 0; }
   .reader-record .perfect-badge { padding: 20px 0 0; }
   .reader-record .perfect-earned { background: transparent; box-shadow: none; }
   .secret-preview { position: relative; isolation: isolate; margin: 22px 0 20px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--secret-paper) 24%, transparent); border-top: 4px solid var(--secret-paper); border-radius: 3px; color: #fff; background: color-mix(in srgb, var(--secret-header) 88%, #080808); box-shadow: 0 16px 34px color-mix(in srgb, var(--secret-header) 22%, transparent); }
+  .secret-preview-waiting { opacity: .28; clip-path: inset(0 0 100% 0 round 3px); transform: translateY(var(--motion-distance-small)); }
+  .secret-preview-revealing { animation: secret-preview-unseal calc(var(--motion-duration-composed) + var(--motion-duration-standard)) var(--motion-ease-enter) both; }
   .secret-preview::before { content: ''; position: absolute; z-index: -1; inset: 0; opacity: .075; background: repeating-linear-gradient(135deg, transparent 0 9px, #fff 9px 10px); pointer-events: none; }
   .secret-preview::after { content: ''; position: absolute; z-index: -1; right: -55px; bottom: -78px; width: 180px; height: 180px; border: 1px solid #ffffff1f; border-radius: 50%; box-shadow: 0 0 0 22px #ffffff08,0 0 0 44px #ffffff06; pointer-events: none; }
+  .secret-reveal-rule { position: absolute; z-index: 4; top: 0; right: 0; left: 0; height: 1px; opacity: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--secret-paper) 80%, #fff), transparent); box-shadow: 0 1px 10px color-mix(in srgb, var(--secret-paper) 34%, transparent); pointer-events: none; }
   .secret-watermark { position: absolute; z-index: -1; right: 9px; top: 66px; color: #ffffff0a; font-family: 'Manrope', sans-serif; font-size: 8.5rem; font-weight: 800; line-height: .8; letter-spacing: -.12em; pointer-events: none; }
   .secret-heading { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 14px 16px; border-bottom: 1px solid #ffffff1f; background: #0000001f; }
   .secret-lock { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid #ffffff2e; border-radius: 50%; background: #ffffff0c; color: var(--secret-paper); }
@@ -303,10 +472,34 @@
   .secret-footer>span { display: flex; align-items: center; gap: 6px; }
   .secret-footer svg { width: 15px; height: 15px; color: var(--secret-paper); }
   .secret-footer strong { padding: 5px 7px; border: 1px solid #ffffff2b; border-radius: 2px; color: var(--secret-paper); font-size: .5rem; letter-spacing: .12em; white-space: nowrap; }
+  .secret-preview-revealing .secret-reveal-rule { animation: secret-proof-rule calc(var(--motion-duration-composed) + var(--motion-duration-standard)) var(--motion-ease-standard) both; }
+  .secret-preview-revealing .secret-heading { animation: secret-proof-copy var(--motion-duration-composed) var(--motion-duration-instant) var(--motion-ease-enter) both; }
+  .secret-preview-revealing .secret-divider { animation: secret-proof-copy var(--motion-duration-standard) var(--motion-duration-quick) var(--motion-ease-enter) both; }
+  .secret-preview-revealing .secret-copy { animation: secret-proof-copy var(--motion-duration-composed) var(--motion-duration-standard) var(--motion-ease-enter) both; }
+  .secret-preview-revealing .secret-footer { animation: secret-proof-copy var(--motion-duration-standard) calc(var(--motion-duration-standard) + var(--motion-duration-instant)) var(--motion-ease-enter) both; }
+  .secret-preview-revealing .secret-watermark { animation: secret-proof-watermark calc(var(--motion-duration-composed) + var(--motion-duration-standard)) var(--motion-duration-quick) var(--motion-ease-enter) both; }
+  .secret-preview-revealing .secret-lock { animation: secret-proof-lock var(--motion-duration-composed) var(--motion-duration-quick) var(--motion-ease-enter) both; }
   @keyframes completion-line { from { opacity: 0; transform: scaleX(0); } to { opacity: .65; transform: scaleX(1); } }
   @keyframes completion-spark { from { opacity: 0; transform: scale(.45) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
   @keyframes completion-unlock { from { opacity: 0; transform: translateX(-8px) scale(.78); } to { opacity: 1; transform: translateX(0) scale(1); } }
   @keyframes completion-copy { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes reader-value-settle { 0% { opacity: .45; transform: translateY(5px); } 62% { opacity: 1; transform: translateY(-1px); } 100% { opacity: 1; transform: none; } }
+  @keyframes streak-kindle { 0% { transform: scale(.86); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--publication-brand) 18%, transparent), 0 0 0 0 color-mix(in srgb, var(--publication-brand) 20%, transparent); } 62% { transform: scale(1.04); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--publication-brand) 22%, transparent), 0 0 0 8px transparent; } 100% { transform: none; } }
+  @keyframes streak-day-filed { 0% { opacity: .42; transform: scale(.82); } 70% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: none; } }
+  @keyframes xp-entry-filed { 0% { background: transparent; } 35% { background: color-mix(in srgb, var(--publication-brand) 9%, transparent); } 100% { background: transparent; } }
+  @keyframes xp-network-settle { 0% { opacity: .5; transform: translateX(var(--motion-distance-small)); } 70% { opacity: 1; transform: translateX(-1px); } 100% { opacity: 1; transform: none; } }
+  @keyframes secret-preview-unseal { 0% { opacity: .28; clip-path: inset(0 0 100% 0 round 3px); transform: translateY(var(--motion-distance-small)); } 100% { opacity: 1; clip-path: inset(0 0 0 0 round 3px); transform: none; } }
+  @keyframes secret-proof-rule { 0% { top: 0; opacity: 0; } 15%, 72% { opacity: .72; } 100% { top: calc(100% - 1px); opacity: 0; } }
+  @keyframes secret-proof-copy { from { opacity: 0; transform: translateY(var(--motion-distance-small)); } to { opacity: 1; transform: none; } }
+  @keyframes secret-proof-watermark { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes secret-proof-lock { 0% { opacity: .45; transform: rotate(-7deg) scale(.88); } 68% { opacity: 1; transform: rotate(1deg) scale(1.025); } 100% { opacity: 1; transform: none; } }
+  @keyframes perfect-badge-arrive { from { opacity: 0; transform: translateY(var(--motion-distance-medium)); } to { opacity: 1; transform: none; } }
+  @keyframes perfect-seal-arrive { 0% { opacity: 0; transform: translateY(-10px) scale(.76) rotate(-7deg); } 68% { opacity: 1; transform: translateY(2px) scale(1.045) rotate(1.5deg); } 100% { opacity: 1; transform: none; } }
+  @keyframes perfect-ribbon-unfurl { from { opacity: 0; transform: translateY(-6px) scaleY(.45); } to { opacity: 1; transform: none; } }
+  @keyframes perfect-rosette-press { 0% { transform: scale(.78) rotate(-6deg); } 66% { transform: scale(1.06) rotate(1deg); } 100% { transform: none; } }
+  @keyframes perfect-copy-arrive { from { opacity: 0; transform: translateX(var(--motion-distance-small)); } to { opacity: 1; transform: none; } }
+  @keyframes perfect-check-draw { to { stroke-dashoffset: 0; } }
+  @keyframes perfect-badge-sweep { 0%, 24% { opacity: 0; transform: translateX(-115%); } 45% { opacity: .75; } 100% { opacity: 0; transform: translateX(115%); } }
 
   @media (max-width: 360px) {
     .completion-passage { grid-template-columns: 4.5rem minmax(2.25rem, 1fr) 4.5rem; gap: 8px; }
@@ -343,6 +536,21 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .completion-ring-fill { transition: none; }
-    .completion-bridge span, .completion-bridge svg, .completion-bonus, .completion-celebration h1, .completion-celebration>p { animation: none; }
+    .completion-bridge span, .completion-bridge svg, .completion-bonus, .completion-celebration h1, .completion-celebration>p,
+    .streak-values-revealed .streak-value, .streak-values-revealed .streak-flame, .streak-values-revealed .day-today i,
+    .xp-values-revealed .xp-heading .xp-counted-value, .xp-values-revealed .xp-completion-line,
+    .xp-values-revealed .xp-completion-line .xp-counted-value, .xp-values-revealed .xp-total>strong,
+    .secret-preview-revealing, .secret-preview-revealing .secret-reveal-rule, .secret-preview-revealing .secret-heading,
+    .secret-preview-revealing .secret-divider, .secret-preview-revealing .secret-copy, .secret-preview-revealing .secret-footer,
+    .secret-preview-revealing .secret-watermark, .secret-preview-revealing .secret-lock,
+    .perfect-badge-settling, .perfect-badge-settling .perfect-seal, .perfect-badge-settling .perfect-ribbon,
+    .perfect-badge-settling .perfect-rosette, .perfect-badge-settling .perfect-copy, .perfect-badge-settling .perfect-meta,
+    .perfect-earned.perfect-badge-settling .perfect-check, .perfect-earned.perfect-badge-settling::after { animation: none; }
+    .perfect-badge-waiting { opacity: 1; transform: none; }
+    .streak-values-waiting .streak-value, .xp-values-waiting .xp-counted-value { opacity: 1; }
+    .streak-values-waiting .day-today i { opacity: 1; transform: none; }
+    .secret-preview-waiting { opacity: 1; clip-path: none; transform: none; }
+    .secret-reveal-rule { display: none; }
+    .perfect-earned.perfect-badge-settling .perfect-check { stroke-dashoffset: 0; }
   }
 </style>

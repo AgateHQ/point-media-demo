@@ -63,14 +63,26 @@ The first reading-identity signal now appears as a quiet editorial note inside t
 ## 6. Add better motion and feedback
 
 - [x] Establish a consistent motion language for the app.
-- [ ] Animate progress segments when an article is completed.
-- [ ] Improve wallet charge and reward moments.
-- [ ] Animate the completion badge as it settles into place.
-- [ ] Animate streak and XP values when they change.
-- [ ] Reveal the preview card with a gentle masked animation.
-- [ ] Respect `prefers-reduced-motion` for every new interaction.
+- [x] Animate progress segments when an article is completed.
+- [x] Improve wallet charge and reward moments.
+- [x] Animate the completion badge as it settles into place.
+- [x] Animate streak and XP values when they change.
+- [x] Reveal the preview card with a gentle masked animation.
+- [x] Respect `prefers-reduced-motion` for every new interaction.
 
 Motion now follows one editorial vocabulary across the app: live progress is immediate, controls are quick, in-place content changes are standard, milestones and sheets are composed, and exits are deliberately shorter than arrivals. Shared duration, easing, and distance tokens drive CSS and the JavaScript article-turn fallback alike; journeys, cards, images, wallet feedback, discovery, sheets, halfway and final-story moments, and completion choreography now speak the same language. Existing reduced-motion paths remain immediate.
+
+Completing a full story now turns its journey segment into a small editorial reward: the line fills like a stroke of ink, a quiet glint passes through it, and the numbered marker settles into its collected check. The motion runs only when a card is newly earned, never when saved progress loads or the reader changes publication, and reduced-motion readers receive the finished state immediately.
+
+Wallet transactions now land as one continuous, legible moment: the new balance settles into place, a compact amount marker stays attached to the wallet, and a small receipt names exactly what was spent or received. Repeated changes restart cleanly, automatic top-ups hand off into article charges, and the open wallet mirrors the same event. The partner reward now visibly moves from preparation to a restrained credited state instead of changing as an isolated line of text; saved rewards remain settled on revisit, and reduced motion removes the choreography without hiding the result.
+
+The Perfect edition badge now waits until it actually enters view, then settles into the reader’s record as a composed editorial stamp. The seal lands with a restrained press, its ribbons unfold, the earned check draws last, and a faint publication-coloured sheen closes the moment. It runs only after a newly completed edition, so restored completion screens stay still; incomplete sets use the same quiet arrival without implying the badge was earned, and reduced motion shows the final state immediately.
+
+Streak and XP changes now wait for their respective entries in the reader’s record before counting from the previous value to the newly filed total. A real streak extension kindles the flame and settles today’s mark; completion XP adds a restrained highlight to the ledger and carries through to the network record. Completion is now stored as a once-only publication event, so opening all eight stories does not prematurely award the final `20 XP`, reloads and revisits stay still, and finishing another edition on the same day cannot fake a streak increase. Reduced-motion readers receive every final value immediately.
+
+The advance proof now reveals only when it reaches the viewport, opening from top to bottom behind a fine publication-coloured rule. Its folio, lock, watermark, headline, and issue footer settle in a restrained editorial sequence so the card feels unsealed rather than simply faded in. The reveal belongs only to a newly completed edition; reloads and revisits show the proof already open, older browsers retain a light arrival, and reduced motion presents the finished card immediately.
+
+Reduced-motion support now covers the full interaction, not only its CSS. Sheets close without waiting for an absent exit, Discover changes cards without a swipe or pointer tilt, story unlocks and partner credits commit immediately, smooth scrolling becomes instant, article turns settle in place, completion count-ups resolve to their final values, and background video never loads or plays. If the preference changes during a running sequence, long-lived transitions finish cleanly instead of leaving the interface between states.
 
 ## 7. Make publications feel more distinct
 

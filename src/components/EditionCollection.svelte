@@ -59,5 +59,5 @@
     .collection-eyebrow { display: block; max-width: 230px; padding-right: 16px; line-height: 1.5; }
   }
   @media (max-width: 360px) { .collection-grid { gap: 16px 10px; } }
-  @media (prefers-reduced-motion: reduce) { .collection-card-button { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .collection-card-button { transform: none; transition: none; } }
 </style>

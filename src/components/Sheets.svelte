@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { demo, currentPub, selectPublication, topup, reset, isIos, isSafari, notify } from '../demo.svelte';
   import { publications, money } from '../data';
+  import { motionDelay, reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
   import PublicationLogo from './PublicationLogo.svelte';
   import EditionCollection from './EditionCollection.svelte';
@@ -34,17 +36,34 @@
     }
     document.dispatchEvent(new Event('demo-sheet-change'));
   });
+
+  onMount(() => {
+    const motion = reducedMotionPreference();
+    const finishWithoutMotion = () => {
+      if (!motion.matches || (!closing && !entering)) return;
+      window.clearTimeout(timer);
+      timer = 0;
+      demo.sheet = null;
+    };
+    motion.addEventListener('change', finishWithoutMotion);
+    return () => motion.removeEventListener('change', finishWithoutMotion);
+  });
+
   function close() {
     if (closing || entering) return;
+    const delay = motionDelay(650);
+    if (!delay) { demo.sheet = null; return; }
     closing = true;
-    timer = window.setTimeout(() => { demo.sheet = null; }, 650);
+    timer = window.setTimeout(() => { demo.sheet = null; }, delay);
   }
   function enter(id: string, motion: 'down' | 'up' = 'down') {
     if (entering || closing) return;
-    entering = true;
-    slideToEdition = motion === 'up';
+    const delay = motionDelay(motion === 'up' ? 620 : 320);
+    entering = delay > 0;
+    slideToEdition = delay > 0 && motion === 'up';
     selectPublication(id, false);
-    timer = window.setTimeout(() => { demo.sheet = null; }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 20 : motion === 'up' ? 620 : 320);
+    if (!delay) { demo.sheet = null; return; }
+    timer = window.setTimeout(() => { demo.sheet = null; }, delay);
   }
   function events(node: HTMLDialogElement) {
     const click = (e: MouseEvent) => {
@@ -94,7 +113,10 @@
       <p class="install-result">It launches full screen and keeps your demo progress on this device.</p><button class="primary" onclick={close}>Got it <Icon /></button>
     {:else}
       <span class="eyebrow">YOUR AXATE WALLET</span><p>Your funds travel with you across the Axate network.</p>
-      <div class="balance-row"><span>Balance</span><strong class:balance-bump={demo.walletChange.kind === 'received'}>{money(demo.data.balance)}</strong><button class="wallet-top-up" onclick={topup} aria-label="Top up 1 GBP">Top up £1</button></div>
+      <div class="balance-row"><span>Balance</span>{#key demo.data.balance}<strong class:balance-bump={!!demo.walletChange.kind} class:balance-spent={demo.walletChange.kind === 'spent'}>{money(demo.data.balance)}</strong>{/key}<button class="wallet-top-up" onclick={topup} aria-label="Top up 1 GBP">Top up £1</button></div>
+      <div class="wallet-sheet-event" class:wallet-sheet-event-visible={!!demo.walletChange.amount} class:wallet-sheet-event-spent={demo.walletChange.kind === 'spent'} aria-hidden="true">
+        {#if demo.walletChange.amount}{#key demo.walletChange.id}<strong>{demo.walletChange.amount}</strong><span>{demo.walletChange.label}</span>{/key}{/if}
+      </div>
       <div class="price-row"><span>Full articles</span><span>{unlockedCount} unlocked · {money(unlockedCount * 20)} paid</span></div>
       <div class="price-row"><span>Partner reward</span><span>{demo.data.reward ? '+10p received' : 'Available in this edition'}</span></div>
       <p class="fine-print">Powered by <a href="https://axate.com" target="_blank" rel="noopener noreferrer"><b>axate</b></a></p><button class="wallet-reset" onclick={reset}>Reset everything</button>

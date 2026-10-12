@@ -149,8 +149,8 @@ button{transition:background var(--motion-duration-quick) var(--motion-ease-stan
 .expand-button,.network-card,.network-up,.publication-shell,.discover-dots span{transition-duration:var(--motion-duration-quick);transition-timing-function:var(--motion-ease-standard)}
 .story-content,.completion{animation-duration:var(--motion-duration-standard);animation-timing-function:var(--motion-ease-enter)}
 .story-content.expanded .body-copy,.story-content.expanded .takeaway{animation-duration:var(--motion-duration-standard);animation-timing-function:var(--motion-ease-enter)}
-.wallet-button.wallet-spent>span:first-of-type,.wallet-button.wallet-received>span:first-of-type,.balance-bump{animation-duration:var(--motion-duration-composed);animation-timing-function:var(--motion-ease-enter)}
-.wallet-delta{animation-duration:calc(var(--motion-duration-composed) * 1.7);animation-timing-function:var(--motion-ease-enter)}
+.wallet-balance,.balance-bump{animation-duration:var(--motion-duration-composed);animation-timing-function:var(--motion-ease-enter)}
+.wallet-delta{animation-duration:calc(var(--motion-duration-composed) * 2.5);animation-timing-function:var(--motion-ease-enter)}
 dialog.wallet-sheet,dialog.network-sheet{animation-duration:var(--motion-duration-composed);animation-timing-function:var(--motion-ease-enter)}
 dialog.wallet-sheet.closing,dialog.network-sheet.closing{animation-duration:var(--motion-duration-standard);animation-timing-function:var(--motion-ease-exit)}
 dialog.discover-sheet{animation-duration:var(--motion-duration-standard);animation-timing-function:var(--motion-ease-enter)}
@@ -162,22 +162,32 @@ dialog.discover-sheet.closing{animation-duration:var(--motion-duration-quick);an
 html[data-edition-turn]::view-transition-old(root){animation-duration:var(--motion-duration-exit);animation-timing-function:var(--motion-ease-exit)}
 html[data-edition-turn]::view-transition-new(root){animation-duration:var(--motion-duration-standard);animation-timing-function:var(--motion-ease-enter)}
 
-/* Keep article purchase feedback close to the control that triggered it. */
-#toast{transform:translate(-50%,15px) scale(.96);font-weight:600;transition:opacity .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
+/* Transaction receipts stay close to the wallet without competing with the story. */
+#toast{z-index:70;transform:translate(-50%,var(--motion-distance-small)) scale(.98);font-weight:600;transition:opacity var(--motion-duration-quick) var(--motion-ease-standard),transform var(--motion-duration-standard) var(--motion-ease-enter)}
 #toast.anchored{bottom:auto}
 #toast.visible{transform:translate(-50%,0) scale(1)}
+#toast.toast-transaction{--transaction-accent:#e5d0ad;display:grid;grid-template-columns:30px auto;align-items:center;gap:9px;min-width:190px;padding:7px 12px 7px 7px;border:1px solid color-mix(in srgb,var(--transaction-accent) 35%,transparent);border-radius:8px;background:#171a17;color:#f7f7ef;text-align:left;box-shadow:0 14px 38px #0008,0 0 0 1px #0003}
+#toast.toast-received{--transaction-accent:#78e5b7}
+.toast-transaction-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--transaction-accent) 15%,transparent);color:var(--transaction-accent);font-size:17px;font-weight:500;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--transaction-accent) 26%,transparent)}
+.toast-transaction-copy{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:7px;white-space:nowrap}
+.toast-transaction-copy strong{color:var(--transaction-accent);font-family:'Manrope',sans-serif;font-size:13px;font-variant-numeric:tabular-nums}
+.toast-transaction-copy span{color:#e5e7df;font-size:11px;font-weight:600}
 
 /* Wallet balance changes should feel attached to the wallet, not the article body. */
 .wallet-button{position:relative;overflow:visible}
-.wallet-button.wallet-spent{background:#1b201b;border-color:#1bb58055;box-shadow:0 0 0 1px #1bb58022,0 12px 35px #0004}
-.wallet-button.wallet-received{background:#203026;border-color:#76e2b266;box-shadow:0 0 0 1px #76e2b233,0 12px 35px #0004}
-.wallet-button.wallet-spent>span:first-of-type{animation:wallet-balance-spent .62s cubic-bezier(.2,.85,.25,1)}
-.wallet-button.wallet-received>span:first-of-type{animation:wallet-balance-received .62s cubic-bezier(.2,.85,.25,1)}
-.wallet-delta{position:absolute;right:22px;top:-25px;z-index:3;padding:5px 8px;border-radius:999px;background:#f7f7ef;color:#122017;font-size:11px;font-weight:800;line-height:1;box-shadow:0 10px 28px #0008;animation:wallet-delta-float 1.05s cubic-bezier(.16,1,.3,1) both;white-space:nowrap}
-.wallet-received .wallet-delta{background:#78e5b7;color:#05180f}
-@keyframes wallet-balance-spent{0%{transform:translateY(0) scale(1);color:inherit}34%{transform:translateY(2px) scale(.88);color:#f7f7ef}72%{transform:translateY(-1px) scale(1.08);color:#9ff0cb}100%{transform:translateY(0) scale(1);color:inherit}}
-@keyframes wallet-balance-received{0%{transform:scale(1);color:inherit}45%{transform:scale(1.16);color:#a2ffd9;text-shadow:0 0 22px #1bb580}100%{transform:scale(1);color:inherit;text-shadow:none}}
-@keyframes wallet-delta-float{0%{opacity:0;transform:translateY(8px) scale(.88)}18%{opacity:1;transform:translateY(0) scale(1)}74%{opacity:1;transform:translateY(-5px) scale(1)}100%{opacity:0;transform:translateY(-13px) scale(.96)}}
+.wallet-balance{display:inline-block;min-width:3.2ch;font-variant-numeric:tabular-nums}
+.publication-shell .wallet-button.wallet-spent{border-color:#e5d0ad7a;box-shadow:0 0 0 1px #e5d0ad22,0 9px 26px #0003}
+.publication-shell .wallet-button.wallet-received{border-color:#76e2b27a;box-shadow:0 0 0 1px #76e2b226,0 9px 26px #0003}
+.wallet-button.wallet-spent::after,.wallet-button.wallet-received::after{content:"";position:absolute;inset:-1px;border:1px solid #e5d0ad;border-radius:inherit;pointer-events:none;animation:wallet-settle-ring var(--motion-duration-composed) var(--motion-ease-enter) both}
+.wallet-button.wallet-received::after{border-color:#78e5b7}
+.wallet-button.wallet-spent .wallet-balance{animation:wallet-balance-spent var(--motion-duration-standard) var(--motion-ease-enter)}
+.wallet-button.wallet-received .wallet-balance{animation:wallet-balance-received var(--motion-duration-standard) var(--motion-ease-enter)}
+.wallet-delta{position:absolute;right:-8px;top:-10px;z-index:3;padding:5px 7px;border:1px solid #ffffff8c;border-radius:999px;background:#f4eee3;color:#241d14;font-size:10px;font-weight:800;line-height:1;box-shadow:0 8px 22px #0007;animation:wallet-delta-settle calc(var(--motion-duration-composed) * 2.5) var(--motion-ease-enter) both;white-space:nowrap;font-variant-numeric:tabular-nums}
+.wallet-received .wallet-delta{background:#78e5b7;color:#05180f;border-color:#b8f5dc}
+@keyframes wallet-settle-ring{0%{opacity:0;transform:scale(.94)}35%{opacity:.48}100%{opacity:0;transform:scale(1.08)}}
+@keyframes wallet-balance-spent{0%{opacity:.45;transform:translateY(-4px)}68%{opacity:1;transform:translateY(1px)}100%{opacity:1;transform:none}}
+@keyframes wallet-balance-received{0%{opacity:.45;transform:translateY(4px)}68%{opacity:1;transform:translateY(-1px)}100%{opacity:1;transform:none}}
+@keyframes wallet-delta-settle{0%{opacity:0;transform:translateY(5px) scale(.88)}12%{opacity:1;transform:translateY(0) scale(1)}74%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-4px) scale(.96)}}
 
 /* Wallet reveal: it unfolds from the header control and settles into place. */
 dialog.wallet-sheet{position:fixed;inset:78px max(20px,calc((100vw - 1440px)/2 + 56px)) auto auto;margin:0;width:min(410px,calc(100vw - 40px));max-height:calc(100svh - 100px);overflow:auto;transform-origin:calc(100% - 46px) 0;animation:wallet-reveal .58s cubic-bezier(.16,1,.3,1) both;box-shadow:0 34px 100px #000b,0 0 0 1px #ffffff0a}
@@ -199,12 +209,22 @@ dialog.wallet-sheet.closing::backdrop{animation:wallet-backdrop-out .34s ease-in
 
 .wallet-sheet .balance-row{display:grid;grid-template-columns:1fr auto;gap:7px 14px}
 .wallet-sheet .balance-row strong{align-self:center}
+.wallet-sheet-event{display:flex;align-items:center;gap:8px;min-height:29px;margin:-7px 0 5px;color:#78e5b7;font-size:11px;opacity:0;transform:translateY(-4px)}
+.wallet-sheet-event-visible{opacity:1;transform:none;transition:opacity var(--motion-duration-standard) var(--motion-ease-standard),transform var(--motion-duration-standard) var(--motion-ease-enter)}
+.wallet-sheet-event strong{font-family:'Manrope',sans-serif;font-size:12px;font-variant-numeric:tabular-nums}
+.wallet-sheet-event span{color:#bdc5b8}
+.wallet-sheet-event-spent{color:#e5d0ad}
+.wallet-sheet-event-visible>*{animation:wallet-sheet-event-in var(--motion-duration-standard) var(--motion-ease-enter) both}
+.wallet-sheet-event-visible span{animation-delay:var(--motion-duration-progress)}
 .wallet-top-up{grid-column:2;padding:7px 11px;border:1px solid #55c99c66;border-radius:5px;background:#1bb58016;color:#7ee0b8;font-size:11px;font-weight:700;white-space:nowrap}
 .wallet-top-up:hover{background:#1bb58028!important}
 .wallet-reset{display:block;margin:6px auto 0;padding:8px 10px;background:transparent;color:#8f9689;font-size:10px;line-height:1;letter-spacing:.4px;text-decoration:underline;text-decoration-color:#ffffff24;text-underline-offset:3px}
 .wallet-reset:hover{filter:none!important;color:#c8cec0;text-decoration-color:#ffffff55}
-.balance-bump{animation:balance-bump .55s cubic-bezier(.2,.85,.25,1)}
-@keyframes balance-bump{0%{transform:scale(1);text-shadow:none}38%{transform:scale(1.22) rotate(-2deg);color:#a2ffd9;text-shadow:0 0 24px #1bb580}100%{transform:scale(1);text-shadow:none}}
+.balance-bump{animation:balance-bump var(--motion-duration-standard) var(--motion-ease-enter)}
+.balance-bump.balance-spent{animation-name:balance-spent}
+@keyframes balance-bump{0%{opacity:.45;transform:translateY(5px)}70%{opacity:1;transform:translateY(-1px)}100%{opacity:1;transform:none}}
+@keyframes balance-spent{0%{opacity:.45;transform:translateY(-5px)}70%{opacity:1;transform:translateY(1px)}100%{opacity:1;transform:none}}
+@keyframes wallet-sheet-event-in{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:none}}
 
 @media(max-width:720px){
   dialog.wallet-sheet{animation-duration:.82s;animation-timing-function:cubic-bezier(.16,1,.3,1);border-top-color:#76e2b266;box-shadow:0 -28px 90px #000c,0 -1px 0 #7ce5b755,0 0 52px #1bb58018}
@@ -338,8 +358,31 @@ body{min-height:100svh;overscroll-behavior-y:none;-webkit-tap-highlight-color:tr
 .light-edition .completion h1>span{color:#6b357f!important}
 .light-edition .completion-network-cue:hover{color:#201822}
 
-.reward-status{width:100%;margin-top:20px;padding:16px 18px;border-left:4px solid var(--reward-accent);background:#ffffff0d;color:#f4f5ec;font-size:14px;font-weight:700}
+.reward-status{position:relative;display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;margin-top:20px;padding:14px 16px 17px;border:1px solid color-mix(in srgb,var(--reward-accent) 32%,transparent);border-left:4px solid var(--reward-accent);overflow:hidden;background:#ffffff0d;color:#f4f5ec}
+.reward-status-seal{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;color:var(--reward-accent);background:color-mix(in srgb,var(--reward-accent) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--reward-accent) 25%,transparent)}
+.reward-status-seal svg{width:20px;height:20px}
+.reward-status-seal>span{width:8px;height:8px;border-radius:50%;background:var(--reward-accent);animation:reward-preparing var(--motion-duration-standard) var(--motion-ease-standard) infinite alternate}
+.reward-status-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.reward-status-copy small{margin:0;color:color-mix(in srgb,currentColor 62%,transparent);font-size:9px;font-weight:700;line-height:1.2;letter-spacing:1.2px;text-transform:uppercase}
+.reward-status-copy strong{font-size:13px;line-height:1.3}
+.reward-status-amount{color:var(--reward-accent);font-family:'Manrope',sans-serif;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.reward-status-track{position:absolute;left:0;right:0;bottom:0;height:3px;background:color-mix(in srgb,var(--reward-accent) 11%,transparent);overflow:hidden}
+.reward-status-track i{display:block;width:100%;height:100%;background:var(--reward-accent);transform:scaleX(0);transform-origin:left;animation:reward-transfer 700ms var(--motion-ease-standard) both}
+.reward-received{background:color-mix(in srgb,var(--reward-accent) 9%,transparent)}
+.reward-received .reward-status-track i{animation:none;transform:scaleX(1)}
+.reward-celebrate::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 25%,color-mix(in srgb,#fff 45%,transparent) 48%,transparent 70%);transform:translateX(-120%);animation:reward-sweep var(--motion-duration-composed) var(--motion-ease-standard) both;pointer-events:none}
+.reward-celebrate .reward-status-seal{animation:reward-seal-settle var(--motion-duration-composed) var(--motion-ease-enter) both}
+.reward-celebrate .reward-status-amount{animation:reward-amount-settle var(--motion-duration-composed) var(--motion-ease-enter) both}
 .light-edition .reward-status{background:#ffffff0d;color:#f9f4fb}
+@keyframes reward-preparing{to{transform:scale(1.45);opacity:.45}}
+@keyframes reward-transfer{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes reward-sweep{0%,18%{opacity:0;transform:translateX(-120%)}42%{opacity:.55}100%{opacity:0;transform:translateX(120%)}}
+@keyframes reward-seal-settle{0%{transform:scale(.72) rotate(-7deg)}62%{transform:scale(1.08) rotate(2deg);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--reward-accent) 25%,transparent),0 0 0 6px color-mix(in srgb,var(--reward-accent) 10%,transparent)}100%{transform:none}}
+@keyframes reward-amount-settle{0%{opacity:.35;transform:translateY(6px)}65%{opacity:1;transform:translateY(-1px)}100%{transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .reward-status-seal>span,.reward-status-track i,.reward-celebrate::after,.reward-celebrate .reward-status-seal,.reward-celebrate .reward-status-amount,.wallet-button::after,.wallet-balance,.wallet-delta,.wallet-sheet-event-visible>*{animation:none!important}
+  .wallet-sheet-event-visible{transition:none!important}
+}
 
 /* A quiet transition between the free preview and the automatically opened story. */
 .scroll-unlock{--unlock-progress:0;min-height:68svh;margin:56px 0 20px;padding:16svh 12px;border-top:1px solid #ffffff28;border-bottom:1px solid #ffffff20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#f4f5ec}
@@ -362,6 +405,7 @@ body{min-height:100svh;overscroll-behavior-y:none;-webkit-tap-highlight-color:tr
   .scroll-unlock strong{font-size:18px}
 }
 @media(prefers-reduced-motion:reduce){
+  .scroll-unlock-icon{transform:none!important}
   .scroll-unlock-icon,.scroll-unlock-track i{transition:none!important}
   .scroll-unlock.unlocking .scroll-unlock-icon{animation:none!important}
 }
@@ -539,7 +583,8 @@ dialog.discover-sheet.slide-to-edition::backdrop{animation:discover-edition-back
   .discover-card-copy{margin-top:auto}
 }
 @media(prefers-reduced-motion:reduce){
-  dialog.discover-sheet,dialog.discover-sheet::backdrop,.discover-card{animation-duration:.01ms!important;transition:none!important}
+  dialog.discover-sheet,dialog.discover-sheet::backdrop,.discover-card{animation:none!important;transition:none!important}
+  .discover-card{--drag-x:0px!important;--drag-y:0px!important;--drag-rotate:0deg!important}
 }
 
 /* Each publication has its own editorial paper, ink and surrounding room. */
@@ -772,4 +817,6 @@ html[data-edition-turn]::view-transition-new(edition-masthead),html[data-edition
 @keyframes edition-turn-in{from{opacity:0;transform:translateX(var(--edition-turn-distance))}to{opacity:1;transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){
   html[data-edition-turn]::view-transition-group(*),html[data-edition-turn]::view-transition-old(*),html[data-edition-turn]::view-transition-new(*){animation:none!important}
+  html{scroll-behavior:auto!important}
+  .primary:hover,.network-card:hover,.book-tile:hover,.discover-button:hover{transform:none!important}
 }

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { demo } from '../demo.svelte';
   import { youtubeEmbed } from '../data';
+  import { reducedMotionPreference } from '../motion';
   let { id, title, kind = 'story' }: { id: string; title: string; kind?: 'story' | 'discover' } = $props();
   let container: HTMLDivElement;
   let frame = $state<HTMLIFrameElement>();
@@ -28,7 +29,7 @@
     send(shouldPlay ? 'playVideo' : 'pauseVideo');
   });
   onMount(() => {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const reducedMotion = reducedMotionPreference();
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
     const preferencesChanged = () => { allowed = !reducedMotion.matches && !connection?.saveData; };
     const visibilityChanged = () => { pageVisible = !document.hidden; };

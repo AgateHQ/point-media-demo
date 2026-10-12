@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { demo, ensureBalance, expand } from '../demo.svelte';
+  import { reducedMotionPreference } from '../motion';
   let { storyId, accent }: { storyId: string; accent: string } = $props();
   let zone: HTMLElement;
   let boundary: HTMLSpanElement;
@@ -19,6 +20,16 @@
     let start = 0;
     let end = 0;
     let minimumScroll = 240;
+    const motion = reducedMotionPreference();
+    const finishOpening = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = 0;
+      if (demo.sheet) { opening = false; return; }
+      expand(storyId);
+    };
+    const motionChanged = () => {
+      if (motion.matches && opening && timer) finishOpening();
+    };
     const update = () => {
       frame = 0;
       if (demo.sheet) {
@@ -42,11 +53,7 @@
       if (progress < 1) return;
       opening = true;
       toppedUp = ensureBalance();
-      timer = window.setTimeout(() => {
-        timer = 0;
-        if (demo.sheet) { opening = false; return; }
-        expand(storyId);
-      }, toppedUp ? 1050 : 650);
+      timer = window.setTimeout(finishOpening, motion.matches ? 0 : toppedUp ? 1050 : 650);
     };
     const requestUpdate = () => { if (!frame) frame = requestAnimationFrame(update); };
     const geometryChanged = () => { geometryDirty = true; requestUpdate(); };
@@ -57,12 +64,14 @@
     window.addEventListener('resize', geometryChanged, { passive: true });
     document.addEventListener('demo-sheet-change', geometryChanged);
     content.addEventListener('animationend', geometryChanged);
+    motion.addEventListener('change', motionChanged);
     requestUpdate();
     return () => {
       window.removeEventListener('scroll', requestUpdate);
       window.removeEventListener('resize', geometryChanged);
       document.removeEventListener('demo-sheet-change', geometryChanged);
       content.removeEventListener('animationend', geometryChanged);
+      motion.removeEventListener('change', motionChanged);
       observer.disconnect();
       if (frame) cancelAnimationFrame(frame);
       if (timer) window.clearTimeout(timer);

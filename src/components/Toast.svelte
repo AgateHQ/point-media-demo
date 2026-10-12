@@ -19,4 +19,13 @@
   });
 </script>
 
-<div id="toast" bind:this={toast} role="status" aria-live="polite" class:visible={demo.toast.visible} class:anchored={!!demo.toast.anchor} style:left style:top>{demo.toast.message}</div>
+<div id="toast" bind:this={toast} role="status" aria-live="polite" aria-atomic="true"
+  class:visible={demo.toast.visible} class:anchored={!!demo.toast.anchor}
+  class:toast-transaction={!!demo.toast.kind} class:toast-spent={demo.toast.kind === 'spent'} class:toast-received={demo.toast.kind === 'received'} style:left style:top>
+  {#if demo.toast.kind}
+    <span class="toast-transaction-mark" aria-hidden="true">{demo.toast.kind === 'received' ? '+' : '−'}</span>
+    <span class="toast-transaction-copy"><strong>{demo.toast.amount}</strong><span>{demo.toast.message}</span></span>
+  {:else}
+    <span>{demo.toast.message}</span>
+  {/if}
+</div>

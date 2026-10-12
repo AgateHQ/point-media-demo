@@ -17,8 +17,13 @@
     </button>
   </div>
   <span class="header-tagline">{pub.subtitle}</span>
-  <button class="wallet-button" class:wallet-spent={demo.walletChange.kind === 'spent'} class:wallet-received={demo.walletChange.kind === 'received'} onclick={() => openSheet('wallet')}>
-    <Icon name="wallet" /><span>{money(demo.data.balance)}</span><Icon name="axate" />
-    {#if demo.walletChange.amount}<span class="wallet-delta">{demo.walletChange.amount}</span>{/if}
+  <button class="wallet-button" class:wallet-spent={demo.walletChange.kind === 'spent'} class:wallet-received={demo.walletChange.kind === 'received'}
+    onclick={() => openSheet('wallet')} aria-label={`Open wallet. Balance ${money(demo.data.balance)}`}>
+    <Icon name="wallet" />
+    {#key demo.data.balance}<span class="wallet-balance">{money(demo.data.balance)}</span>{/key}
+    <Icon name="axate" />
+    {#if demo.walletChange.amount}
+      {#key demo.walletChange.id}<span class="wallet-delta" aria-hidden="true">{demo.walletChange.amount}</span>{/key}
+    {/if}
   </button>
 </header>

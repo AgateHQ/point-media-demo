@@ -10,6 +10,7 @@ export interface State {
   screen: 'reader' | 'complete' | 'network';
   expanded: Record<string, string[]>;
   collected: Record<string, string[]>;
+  completed: string[];
   readingDays: string[];
   publication: string;
 }
@@ -32,7 +33,7 @@ function localDay(offset: number) {
   return date;
 }
 function starterReadingDays() { return [-3, -2, -1].map(offset => localDateKey(localDay(offset))); }
-export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, collected: {}, readingDays: starterReadingDays(), publication: 'the-scoop' });
+export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, collected: {}, completed: [], readingDays: starterReadingDays(), publication: 'the-scoop' });
 
 function isStoryMap(value: unknown): value is Record<string, string[]> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
@@ -58,10 +59,18 @@ function restore(): State {
           }
         }
       }
+      // Before completion was stored explicitly, the edition XP rule used a
+      // fully visited issue. Preserve that earned credit when upgrading.
+      s.completed = Array.isArray(s.completed)
+        ? [...new Set(s.completed.filter((id: unknown) => typeof id === 'string' && publications.some(p => p.id === id)))]
+        : publications.filter(publication => publication.storyOrder
+          .every(index => s.visited[publication.id]?.includes(stories[index].id))).map(publication => publication.id);
     }
     if (s && typeof s.paid === 'boolean' && typeof s.reward === 'boolean'
       && Number.isFinite(s.balance) && Number.isInteger(s.position) && s.position >= 0 && s.position <= 8
-      && isStoryMap(s.visited) && isStoryMap(s.expanded) && isReadingDays(s.readingDays)
+      && isStoryMap(s.visited) && isStoryMap(s.expanded) && Array.isArray(s.completed)
+      && s.completed.every((id: unknown) => typeof id === 'string' && publications.some(p => p.id === id))
+      && isReadingDays(s.readingDays)
       && ['cover', 'reader', 'complete', 'network'].includes(s.screen)
       && publications.some(p => p.id === s.publication)) {
       // Older saved editions may still point to the removed opening cover.
@@ -89,8 +98,19 @@ export const demo = $state({
   discoverIndex: 0,
   installPrompt: null as BeforeInstallPromptEvent | null,
   installed: false,
-  toast: { message: '', visible: false, anchor: undefined as DOMRect | undefined },
-  walletChange: { amount: '', kind: '' as '' | 'spent' | 'received' },
+  completionSequence: 0,
+  completionMoment: {
+    id: 0,
+    isNewCompletion: false,
+    streakFrom: 0,
+    streakTo: 0,
+    editionXpFrom: 0,
+    editionXpTo: 0,
+    networkXpFrom: 0,
+    networkXpTo: 0,
+  },
+  toast: { message: '', amount: '', kind: '' as '' | 'spent' | 'received', visible: false, anchor: undefined as DOMRect | undefined },
+  walletChange: { id: 0, amount: '', label: '', kind: '' as '' | 'spent' | 'received' },
 });
 demo.discoverIndex = Math.max(0, publications.findIndex(p => p.id === demo.data.publication));
 
@@ -115,12 +135,11 @@ export function editionXp(publicationId = demo.data.publication): EditionXpSumma
   const ids = publication.storyOrder.map(index => stories[index].id);
   const expanded = new Set(demo.data.expanded[publicationId] || []);
   const collected = new Set(demo.data.collected[publicationId] || []);
-  const visited = new Set(demo.data.visited[publicationId] || []);
   const unlockCount = ids.filter(id => expanded.has(id)).length;
   const fullReadCount = ids.filter(id => collected.has(id)).length;
   const unlockXp = unlockCount * xpRules.unlock;
   const fullReadXp = fullReadCount * xpRules.fullRead;
-  const completionXp = ids.every(id => visited.has(id)) ? xpRules.editionComplete : 0;
+  const completionXp = demo.data.completed.includes(publicationId) ? xpRules.editionComplete : 0;
   return { unlockCount, fullReadCount, unlockXp, fullReadXp, completionXp, total: unlockXp + fullReadXp + completionXp };
 }
 export function networkXp() { return publications.reduce((total, publication) => total + editionXp(publication.id).total, 0); }
@@ -256,16 +275,20 @@ mark();
 
 let toastTimer = 0;
 let walletTimer = 0;
+let walletChangeId = 0;
 export function walletAnchor() { return document.querySelector('.wallet-button')?.getBoundingClientRect(); }
-export function notify(message: string, anchor?: DOMRect) {
+export function notify(message: string, anchor?: DOMRect, transaction?: { amount: string; kind: 'spent' | 'received' }) {
   window.clearTimeout(toastTimer);
-  demo.toast = { message, visible: true, anchor };
+  demo.toast = { message, amount: transaction?.amount || '', kind: transaction?.kind || '', visible: true, anchor };
   toastTimer = window.setTimeout(() => { demo.toast.visible = false; }, 3000);
 }
-export function showWalletChange(amount: string, kind: 'spent' | 'received') {
+export function showWalletChange(amount: string, kind: 'spent' | 'received', label: string) {
   window.clearTimeout(walletTimer);
-  demo.walletChange = { amount, kind };
-  walletTimer = window.setTimeout(() => { demo.walletChange = { amount: '', kind: '' }; }, 1250);
+  const id = ++walletChangeId;
+  demo.walletChange = { id, amount, kind, label };
+  walletTimer = window.setTimeout(() => {
+    if (demo.walletChange.id === id) demo.walletChange = { id, amount: '', label: '', kind: '' };
+  }, 1600);
 }
 export function openSheet(kind: SheetKind) {
   settleEditionTurn();
@@ -309,22 +332,42 @@ export function move(delta: number) {
   return turnEdition(() => {
     demo.data.position = position;
     demo.data.screen = screen;
-    if (screen === 'complete' && addTodayToReadingHistory()) persist();
+    if (screen === 'complete') {
+      const publicationId = demo.data.publication;
+      const isNewCompletion = !demo.data.completed.includes(publicationId);
+      const streakFrom = readingStreak();
+      const editionXpFrom = editionXp().total;
+      const networkXpFrom = networkXp();
+      if (isNewCompletion) demo.data.completed.push(publicationId);
+      addTodayToReadingHistory();
+      const id = demo.completionSequence + 1;
+      demo.completionSequence = id;
+      demo.completionMoment = {
+        id,
+        isNewCompletion,
+        streakFrom,
+        streakTo: readingStreak(),
+        editionXpFrom,
+        editionXpTo: editionXp().total,
+        networkXpFrom,
+        networkXpTo: networkXp(),
+      };
+    }
     mark();
   }, direction, !demo.sheet);
 }
 export function topup() {
   demo.data.balance += 100;
   persist();
-  showWalletChange('+£1', 'received');
-  notify('£1 added to your balance', walletAnchor());
+  showWalletChange('+£1', 'received', 'Top-up received');
+  notify('Balance topped up', walletAnchor(), { amount: '+£1', kind: 'received' });
 }
 export function ensureBalance() {
   if (demo.data.balance >= 20) return false;
   demo.data.balance += 100;
   persist();
-  showWalletChange('+£1', 'received');
-  notify('Demo wallet topped up automatically', walletAnchor());
+  showWalletChange('+£1', 'received', 'Automatic demo top-up');
+  notify('Automatic demo top-up', walletAnchor(), { amount: '+£1', kind: 'received' });
   return true;
 }
 export function expand(id: string) {
@@ -334,16 +377,16 @@ export function expand(id: string) {
   demo.data.expanded[demo.data.publication].push(id);
   demo.data.balance -= 20;
   persist();
-  showWalletChange('-20p', 'spent');
-  notify('20p deducted · Full article unlocked', walletAnchor());
+  showWalletChange('−20p', 'spent', 'Full article unlocked');
+  notify('Full article unlocked', walletAnchor(), { amount: '−20p', kind: 'spent' });
 }
 export function claim() {
   if (demo.data.screen !== 'reader' || demo.data.position !== 4 || demo.data.reward) return;
   demo.data.reward = true;
   demo.data.balance += 10;
   persist();
-  showWalletChange('+10p', 'received');
-  notify('10p added to your wallet. Nice.', walletAnchor());
+  showWalletChange('+10p', 'received', 'Partner reward received');
+  notify('Partner reward received', walletAnchor(), { amount: '+10p', kind: 'received' });
 }
 export function reset() {
   turnEdition(() => {

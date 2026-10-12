@@ -2,6 +2,7 @@
   import { publications, stories, storyVideos } from '../data';
   import imageAssets from '../image-assets.json';
   import { demo } from '../demo.svelte';
+  import { motionDelay, prefersReducedMotion, reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
   import ResponsiveImage from './ResponsiveImage.svelte';
   import BackgroundVideo from './BackgroundVideo.svelte';
@@ -30,16 +31,22 @@
   function move(delta: number) {
     if (outgoing) return;
     resetDrag();
+    const delay = motionDelay(300);
+    if (!delay) {
+      demo.discoverIndex = (demo.discoverIndex + delta + publications.length) % publications.length;
+      return;
+    }
     outgoing = delta > 0 ? 'swipe-out-left' : 'swipe-out-right';
     animationTimer = window.setTimeout(() => {
+      animationTimer = 0;
       demo.discoverIndex = (demo.discoverIndex + delta + publications.length) % publications.length;
       outgoing = '';
-    }, 300);
+    }, delay);
   }
   function enter(motion: 'down' | 'up' = 'down') {
     if (outgoing) return;
     resetDrag();
-    outgoing = motion === 'down' ? 'enter-publication' : '';
+    outgoing = motion === 'down' && !prefersReducedMotion() ? 'enter-publication' : '';
     onenter(active.id, motion);
   }
   function gestures(node: HTMLElement) {
@@ -51,11 +58,12 @@
     const down = (e: PointerEvent) => {
       if (outgoing || !(e.target instanceof Element) || e.target.closest('button,a,input,select,textarea')) return;
       origin = { x: e.clientX, y: e.clientY, id: e.pointerId, time: performance.now() };
-      dragging = true;
+      dragging = !prefersReducedMotion();
       node.setPointerCapture(e.pointerId);
     };
     const drag = (e: PointerEvent) => {
       if (!origin || e.pointerId !== origin.id) return;
+      if (prefersReducedMotion()) return;
       pointerX = e.clientX;
       pointerY = e.clientY;
       if (!dragFrame) dragFrame = requestAnimationFrame(() => {
@@ -84,16 +92,29 @@
       wheelTimer = window.setTimeout(() => { wheelDistance = 0; }, 180);
       if (wheelDistance >= 90) { wheelDistance = 0; enter('up'); }
     };
+    const motion = reducedMotionPreference();
+    const motionChanged = () => {
+      if (!motion.matches) return;
+      resetDrag();
+      const delta = outgoing === 'swipe-out-left' ? 1 : outgoing === 'swipe-out-right' ? -1 : 0;
+      if (!delta) return;
+      window.clearTimeout(animationTimer);
+      animationTimer = 0;
+      demo.discoverIndex = (demo.discoverIndex + delta + publications.length) % publications.length;
+      outgoing = '';
+    };
     node.addEventListener('pointerdown', down, { passive: true });
     node.addEventListener('pointermove', drag, { passive: true });
     node.addEventListener('pointerup', up, { passive: true });
     node.addEventListener('pointercancel', cancel, { passive: true });
     node.addEventListener('wheel', wheel, { passive: false });
+    motion.addEventListener('change', motionChanged);
     return { destroy() {
       window.clearTimeout(animationTimer); window.clearTimeout(wheelTimer);
       if (dragFrame) cancelAnimationFrame(dragFrame);
       node.removeEventListener('pointerdown', down); node.removeEventListener('pointermove', drag);
       node.removeEventListener('pointerup', up); node.removeEventListener('pointercancel', cancel); node.removeEventListener('wheel', wheel);
+      motion.removeEventListener('change', motionChanged);
     } };
   }
   function keydown(e: KeyboardEvent) {

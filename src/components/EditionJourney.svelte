@@ -1,9 +1,15 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { demo, getStories, pubVisited, pubCollected, halfwayProgress, storyIndex } from '../demo.svelte';
+  import { prefersReducedMotion } from '../motion';
 
   let stories = $derived(getStories());
   let visited = $derived(pubVisited());
   let collected = $derived(pubCollected());
+  let earnedStoryId = $state('');
+  let previousPublication = '';
+  let previousCollected = new Set<string>();
+  let earnedTimer = 0;
   let complete = $derived(demo.data.screen === 'complete');
   let partner = $derived(!complete && demo.data.position === 4);
   let current = $derived(complete ? stories.length + 1 : partner ? 4 : storyIndex() + 1);
@@ -15,6 +21,31 @@
     : atFinish ? 'The final story' : atMidpoint ? halfway.reached ? 'Halfway milestone reached' : 'The halfway chapter' : 'Your daily edition');
   let announcement = $derived(complete ? `Edition complete. ${stories.length} of ${stories.length} articles. Bonus preview unlocked.`
     : partner ? `Partner moment. ${opened} of ${stories.length} articles opened.` : `Article ${current} of ${stories.length}.`);
+
+  // Animate only progress earned while this edition is on screen. Restored sets and
+  // publication changes should arrive complete rather than replaying old rewards.
+  $effect(() => {
+    const publication = demo.data.publication;
+    const collectedNow = [...collected];
+    if (publication !== previousPublication) {
+      previousPublication = publication;
+      previousCollected = new Set(collectedNow);
+      earnedStoryId = '';
+      window.clearTimeout(earnedTimer);
+      return;
+    }
+
+    const newlyEarned = collectedNow.find(id => !previousCollected.has(id));
+    previousCollected = new Set(collectedNow);
+    if (!newlyEarned) return;
+
+    window.clearTimeout(earnedTimer);
+    if (prefersReducedMotion()) { earnedStoryId = ''; return; }
+    earnedStoryId = newlyEarned;
+    earnedTimer = window.setTimeout(() => { earnedStoryId = ''; }, 900);
+  });
+
+  onDestroy(() => window.clearTimeout(earnedTimer));
 </script>
 
 <section class="edition-journey" class:journey-complete={complete} class:journey-partner={partner} class:journey-finish={atFinish} aria-label="Edition journey">
@@ -35,7 +66,8 @@
       aria-valuemin="0" aria-valuemax={stories.length} aria-valuenow={Math.min(current, stories.length)} aria-valuetext={announcement}>
       {#each stories as story, i (story.id)}
         <span class="journey-step" class:journey-current={!complete && !partner && i + 1 === current}
-          class:journey-seen={visited.includes(story.id)} class:journey-collected={collected.includes(story.id)} class:journey-finished={complete} aria-hidden="true">
+          class:journey-seen={visited.includes(story.id)} class:journey-collected={collected.includes(story.id)}
+          class:journey-earned-now={earnedStoryId === story.id} class:journey-finished={complete} aria-hidden="true">
           <span class="journey-step-number">
             {#if collected.includes(story.id)}
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 8 2.5 2.5L12 5" /></svg>
@@ -90,7 +122,7 @@
 
   .journey-map { display: flex; align-items: center; gap: 13px; }
   .journey-stories { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px; flex: 1; min-width: 0; }
-  .journey-step { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .journey-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; }
   .journey-step-number {
     display: grid;
     place-items: center;
@@ -105,12 +137,38 @@
     transition: color var(--motion-duration-quick) var(--motion-ease-standard), background var(--motion-duration-quick) var(--motion-ease-standard), border-color var(--motion-duration-quick) var(--motion-ease-standard);
   }
   .journey-step-number svg { width: 16px; height: 16px; }
-  .journey-step-track { width: 100%; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--edition-ink) 14%, transparent); transition: background var(--motion-duration-standard) var(--motion-ease-standard); }
+  .journey-step-track { position: relative; width: 100%; height: 3px; overflow: hidden; border-radius: 2px; background: color-mix(in srgb, var(--edition-ink) 14%, transparent); transition: background var(--motion-duration-standard) var(--motion-ease-standard); }
+  .journey-step-track::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, transparent, color-mix(in srgb, #fff 82%, var(--publication-brand)) 48%, transparent); opacity: 0; transform: translateX(-140%); }
   .journey-seen .journey-step-number { color: var(--publication-brand); }
   .journey-seen .journey-step-track { background: color-mix(in srgb, var(--publication-brand) 42%, var(--edition-bg)); }
   .journey-current .journey-step-number { color: #fff; background: var(--publication-brand); border-color: var(--publication-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--publication-brand) 10%, transparent); }
   .journey-current .journey-step-track, .journey-finished .journey-step-track, .journey-collected .journey-step-track { background: var(--publication-brand); }
   .journey-collected:not(.journey-current) .journey-step-number { background: color-mix(in srgb, var(--publication-brand) 9%, transparent); }
+  .journey-earned-now .journey-step-track { animation: journey-progress-earned var(--motion-duration-composed) var(--motion-ease-enter); transform-origin: left center; }
+  .journey-earned-now .journey-step-track::after { animation: journey-progress-glint var(--motion-duration-composed) var(--motion-ease-standard); }
+  .journey-earned-now .journey-step-number { animation: journey-check-earned var(--motion-duration-composed) var(--motion-ease-enter); }
+  .journey-earned-now::after { content: ''; position: absolute; top: 12px; left: 50%; width: 30px; height: 30px; border: 1px solid var(--publication-brand); border-radius: 50%; opacity: 0; pointer-events: none; animation: journey-earned-ring var(--motion-duration-composed) var(--motion-ease-enter); }
+
+  @keyframes journey-progress-earned {
+    0% { background: color-mix(in srgb, var(--publication-brand) 34%, var(--edition-bg)); transform: scaleX(.18); }
+    68% { background: var(--publication-brand); transform: scaleX(1.05); }
+    100% { background: var(--publication-brand); transform: scaleX(1); }
+  }
+  @keyframes journey-progress-glint {
+    0%, 24% { opacity: 0; transform: translateX(-140%); }
+    38% { opacity: .72; }
+    76%, 100% { opacity: 0; transform: translateX(140%); }
+  }
+  @keyframes journey-check-earned {
+    0% { transform: scale(.68) rotate(-7deg); }
+    58% { transform: scale(1.12) rotate(2deg); box-shadow: 0 0 0 6px color-mix(in srgb, var(--publication-brand) 13%, transparent); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  @keyframes journey-earned-ring {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.58); }
+    30% { opacity: .32; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.55); }
+  }
 
   .journey-bonus { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 0 0 5.125rem; min-width: 0; padding-left: 12px; border-left: 1px solid color-mix(in srgb, var(--publication-brand) 20%, transparent); }
   .journey-bonus-marker { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--publication-brand) 45%, transparent); color: var(--publication-brand); font-size: .8125rem; font-weight: 800; transition: background var(--motion-duration-standard) var(--motion-ease-standard), color var(--motion-duration-standard) var(--motion-ease-standard), box-shadow var(--motion-duration-standard) var(--motion-ease-standard); }
@@ -155,5 +213,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .journey-step-number, .journey-step-track, .journey-bonus-marker { transition: none; }
+    .journey-earned-now .journey-step-track, .journey-earned-now .journey-step-track::after,
+    .journey-earned-now .journey-step-number, .journey-earned-now::after { animation: none; }
   }
 </style>

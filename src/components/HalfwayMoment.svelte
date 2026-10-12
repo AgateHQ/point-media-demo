@@ -2,6 +2,7 @@
   import { untrack } from 'svelte';
   import { demo, halfwayProgress, move, openSheet } from '../demo.svelte';
   import { storySections } from '../data';
+  import { prefersReducedMotion } from '../motion';
   import Icon from './Icon.svelte';
 
   let { progress }: { progress: ReturnType<typeof halfwayProgress> } = $props();
@@ -26,7 +27,7 @@
       // the top of the checkpoint. Reveal the seal, not just the buttons.
       if (bounds.top < clearTop && bounds.bottom > clearTop) window.scrollBy({
         top: bounds.top - clearTop,
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        behavior: prefersReducedMotion() ? 'instant' : 'smooth',
       });
     });
     return () => cancelAnimationFrame(frame);

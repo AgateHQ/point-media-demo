@@ -4,6 +4,7 @@
   import { articlePreview, storyVideos, storySections } from '../data';
   import imageAssets from '../image-assets.json';
   import { readerIsAtBottom } from '../gestures';
+  import { reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
   import BackgroundVideo from './BackgroundVideo.svelte';
   import ScrollUnlock from './ScrollUnlock.svelte';
@@ -22,6 +23,7 @@
   let finalArticle = $derived(!ad && index === getStories().length - 1);
   let halfway = $derived(halfwayProgress());
   const halfwayOnArrival = untrack(() => halfway.reached);
+  const rewardOnArrival = untrack(() => demo.data.reward);
   let pauseForHalfway = $derived(!ad && index === halfway.target - 1 && halfway.reached && !halfwayOnArrival);
   let videoId = $derived(!ad ? storyVideos[`${pub.id}:${story.id}`] : '');
   let parts = $derived((expanded ? story.expandedBody : articlePreview(story)).split('\n\n'));
@@ -29,8 +31,20 @@
 
   onMount(() => {
     if (!ad || demo.data.reward) return;
-    const timer = window.setTimeout(claim, 700);
-    return () => window.clearTimeout(timer);
+    const motion = reducedMotionPreference();
+    let timer = 0;
+    const finishReward = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = 0;
+      claim();
+    };
+    const motionChanged = () => { if (motion.matches) finishReward(); };
+    motion.addEventListener('change', motionChanged);
+    timer = window.setTimeout(finishReward, motion.matches ? 0 : 700);
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      motion.removeEventListener('change', motionChanged);
+    };
   });
 
   $effect(() => {
@@ -79,7 +93,15 @@
   </section>
   <article class="story-content sponsored">
     <p>Your next great night starts with a little something back. Enjoy 10p on us, straight to your wallet.</p>
-    <div class="reward-status" aria-live="polite" style={`--reward-accent:${pub.accent}`}>{demo.data.reward ? '✓ 10p added to your wallet' : 'Adding 10p to your wallet…'}</div>
+    <div class="reward-status" class:reward-received={demo.data.reward} class:reward-celebrate={demo.data.reward && !rewardOnArrival}
+      aria-live="polite" aria-atomic="true" style={`--reward-accent:${pub.accent}`}>
+      <span class="reward-status-seal" aria-hidden="true">
+        {#if demo.data.reward}<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4.5 10 3.5 3.5 7.5-7.5" /></svg>{:else}<span></span>{/if}
+      </span>
+      <span class="reward-status-copy"><small>{demo.data.reward ? 'Partner reward received' : 'Partner reward'}</small><strong>{demo.data.reward ? 'Added to your wallet' : 'Preparing your credit'}</strong></span>
+      <span class="reward-status-amount">{demo.data.reward ? '+10p' : '10p'}</span>
+      <span class="reward-status-track" aria-hidden="true"><i></i></span>
+    </div>
     <small>A fictional partner. A simulated reward. No purchase needed.</small>
   </article>
 {:else}
