@@ -31,6 +31,8 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Editorial pages and APIs must never enter the reader's offline cache.
+  if (/^\/(admin|api|preview|_next)(\/|$)/.test(url.pathname)) return;
 
   // These URLs contain content hashes, so a cached response stays valid.
   if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/images/optimized/')) {

@@ -6,8 +6,9 @@
   let stories = $derived(getStories());
   let collected = $derived(pubCollected());
   let count = $derived(stories.filter(story => collected.includes(story.id)).length);
-  let headlineFont = $derived(pub.id === 'the-scoop' ? "'Anton', Impact, sans-serif" : pub.id === 'full-time' ? "'Barlow Condensed', sans-serif"
-    : ['evening-lantern', 'northgate-ledger'].includes(pub.id) ? "Georgia, 'Times New Roman', serif" : "'Manrope', sans-serif");
+  let theme = $derived(pub.theme || pub.id);
+  let headlineFont = $derived(theme === 'the-scoop' ? "'Anton', Impact, sans-serif" : theme === 'full-time' ? "'Barlow Condensed', sans-serif"
+    : ['evening-lantern', 'northgate-ledger'].includes(theme) ? "Georgia, 'Times New Roman', serif" : "'Manrope', sans-serif");
 </script>
 
 <section class="edition-collection" style:--article-title-font={headlineFont}>
@@ -16,7 +17,7 @@
     <div class="collection-tally" aria-label={`${count} of ${stories.length} cards collected`}><strong>{count}</strong><span>of {stories.length}<br />collected</span></div>
   </header>
   <p class="collection-instruction">Finish a full story to collect its card. Tap any card to read it.</p>
-  <div class="collection-progress" role="progressbar" aria-label="Story cards collected" aria-valuemin="0" aria-valuemax={stories.length} aria-valuenow={count}>
+  <div class="collection-progress" style:grid-template-columns={`repeat(${stories.length}, minmax(0, 1fr))`} role="progressbar" aria-label="Story cards collected" aria-valuemin="0" aria-valuemax={stories.length} aria-valuenow={count}>
     {#each stories as story (story.id)}<span class:collected={collected.includes(story.id)} aria-hidden="true"></span>{/each}
   </div>
   <div class="collection-grid">

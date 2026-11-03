@@ -18,11 +18,11 @@
   let title = $derived(collected ? 'The last page.' : 'The finish is here.');
   let description = $derived(collected
     ? perfectSet
-      ? 'Eight stories, collected. Today’s edition is complete — and something new is waiting beyond it.'
+      ? `${total === 8 ? 'Eight' : total} ${total === 1 ? 'story' : 'stories'}, collected. Today’s edition is complete — and something new is waiting beyond it.`
       : ready
         ? `Today’s edition is read. ${total - collectedCount} ${total - collectedCount === 1 ? 'card remains' : 'cards remain'} if you want the complete set.`
         : 'This story is collected. We’ll take you back to anything you passed before opening the preview.'
-    : 'Finish this full story to collect the eighth card and close today’s edition on your own terms.');
+    : 'Finish this full story to collect the final card and close today’s edition on your own terms.');
 </script>
 
 <section class="final-moment" class:final-earned={collected} class:final-celebrate={celebrate}

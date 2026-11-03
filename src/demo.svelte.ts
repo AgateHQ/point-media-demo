@@ -1,9 +1,11 @@
-import { publications, stories, legacyPublicationIds, storySections } from './data';
+import { publications, stories, legacyPublicationIds, storySections, readerContext } from './data';
+import { editionNavigation } from './editionContent';
 import { settleEditionTurn, turnEdition } from './editionNavigation';
 
 export interface State {
   paid: boolean;
   balance: number;
+  unlockSpend: number;
   position: number;
   visited: Record<string, string[]>;
   reward: boolean;
@@ -19,7 +21,10 @@ export interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 export type SheetKind = 'discover' | 'network' | 'wallet' | 'install' | 'collection';
-const storageKey = 'the-point-demo-v3';
+const storageKey = readerContext.preview ? `the-point-preview-edition-${readerContext.preview.id}` : 'the-point-demo-v3';
+export const editionPrice = 20;
+// Keep the partner content and its saved position available for a later return.
+export const partnerMomentEnabled = false;
 function localDateKey(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -33,7 +38,7 @@ function localDay(offset: number) {
   return date;
 }
 function starterReadingDays() { return [-3, -2, -1].map(offset => localDateKey(localDay(offset))); }
-export const fresh = (): State => ({ paid: true, balance: 100, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, collected: {}, completed: [], readingDays: starterReadingDays(), publication: 'the-scoop' });
+export const fresh = (): State => ({ paid: true, balance: 100, unlockSpend: 0, position: 0, visited: {}, reward: false, screen: 'reader', expanded: {}, collected: {}, completed: [], readingDays: starterReadingDays(), publication: readerContext.publicationId });
 
 function isStoryMap(value: unknown): value is Record<string, string[]> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
@@ -59,6 +64,16 @@ function restore(): State {
           }
         }
       }
+      // Keep historical article charges in the wallet receipt, then carry each
+      // existing purchase over to the whole edition without another charge.
+      if (!Number.isInteger(s.unlockSpend) || s.unlockSpend < 0) {
+        s.unlockSpend = publications.reduce((total, publication) => total + publication.storyOrder
+          .filter(index => s.expanded[publication.id]?.includes(stories[index].id)).length * editionPrice, 0);
+      }
+      for (const publication of publications) {
+        const ids = publication.storyOrder.map(index => stories[index].id);
+        if (ids.some(id => s.expanded[publication.id]?.includes(id))) s.expanded[publication.id] = ids;
+      }
       // Before completion was stored explicitly, the edition XP rule used a
       // fully visited issue. Preserve that earned credit when upgrading.
       s.completed = Array.isArray(s.completed)
@@ -67,7 +82,8 @@ function restore(): State {
           .every(index => s.visited[publication.id]?.includes(stories[index].id))).map(publication => publication.id);
     }
     if (s && typeof s.paid === 'boolean' && typeof s.reward === 'boolean'
-      && Number.isFinite(s.balance) && Number.isInteger(s.position) && s.position >= 0 && s.position <= 8
+      && Number.isFinite(s.balance) && Number.isInteger(s.position) && s.position >= 0
+      && s.position <= editionNavigation(publications.find(p => p.id === s.publication)?.storyOrder.length || 0).last
       && isStoryMap(s.visited) && isStoryMap(s.expanded) && Array.isArray(s.completed)
       && s.completed.every((id: unknown) => typeof id === 'string' && publications.some(p => p.id === id))
       && isReadingDays(s.readingDays)
@@ -79,6 +95,10 @@ function restore(): State {
         s.position = 0;
       }
       if (s.screen === 'network') s.screen = 'reader';
+      // Resume old saves on the next story while the partner moment is paused.
+      if (!partnerMomentEnabled && s.position === editionNavigation(publications.find(p => p.id === s.publication)!.storyOrder.length).partner) {
+        s.position += 1;
+      }
       // Keep the bonus page after reload; incomplete older states resume reading.
       if (s.screen === 'complete' && !publications.find(p => p.id === s.publication)!.storyOrder
         .every(i => s.visited[s.publication]?.includes(stories[i].id))) s.screen = 'reader';
@@ -116,9 +136,14 @@ demo.discoverIndex = Math.max(0, publications.findIndex(p => p.id === demo.data.
 
 export function currentPub() { return publications.find(p => p.id === demo.data.publication)!; }
 export function getStories() { return currentPub().storyOrder.map(i => stories[i]); }
-export function storyIndex() { return demo.data.position > 4 ? demo.data.position - 1 : demo.data.position; }
+export function storyIndex() { return editionNavigation(getStories().length).storyIndex(demo.data.position); }
+export function isPartnerMoment() { return partnerMomentEnabled && demo.data.screen === 'reader' && demo.data.position === editionNavigation(getStories().length).partner; }
 export function pubVisited() { return demo.data.visited[demo.data.publication] || []; }
 export function pubExpanded() { return demo.data.expanded[demo.data.publication] || []; }
+export function unlockedEditionCount() {
+  return publications.filter(publication => publication.storyOrder
+    .every(index => demo.data.expanded[publication.id]?.includes(stories[index].id))).length;
+}
 export function pubCollected() { return demo.data.collected[demo.data.publication] || []; }
 export const xpRules = { unlock: 2, fullRead: 8, editionComplete: 20 } as const;
 export interface EditionXpSummary {
@@ -236,7 +261,7 @@ export function halfwayProgress() {
   return { firstHalf, secondHalf: edition.slice(target), collected, count, target, total: edition.length, reached: count === target };
 }
 export function collect(id: string) {
-  if (demo.data.screen !== 'reader' || demo.data.position === 4 || getStories()[storyIndex()]?.id !== id
+  if (demo.data.screen !== 'reader' || isPartnerMoment() || getStories()[storyIndex()]?.id !== id
     || !pubExpanded().includes(id) || pubCollected().includes(id)) return;
   demo.data.collected[demo.data.publication] ||= [];
   demo.data.collected[demo.data.publication].push(id);
@@ -246,7 +271,7 @@ export function openStory(id: string) {
   settleEditionTurn();
   const index = getStories().findIndex(story => story.id === id);
   if (index < 0) return;
-  const position = index >= 4 ? index + 1 : index;
+  const position = editionNavigation(getStories().length).storyPosition(index);
   const direction = demo.data.screen === 'complete' || position < demo.data.position ? 'backward' : 'forward';
   const animate = !demo.sheet && (demo.data.screen !== 'reader' || position !== demo.data.position);
   return turnEdition(() => {
@@ -262,7 +287,7 @@ export function persist() {
   try { sessionStorage.setItem(storageKey, json); } catch { /* Reading still works without storage. */ }
 }
 export function mark() {
-  if (demo.data.screen === 'reader' && demo.data.position !== 4) {
+  if (demo.data.screen === 'reader' && !isPartnerMoment()) {
     const id = getStories()[storyIndex()]?.id;
     if (id && !pubVisited().includes(id)) {
       demo.data.visited[demo.data.publication] ||= [];
@@ -296,7 +321,8 @@ export function openSheet(kind: SheetKind) {
   demo.sheet = kind;
 }
 export function home() {
-  return openStory(getStories()[0].id);
+  const first = getStories()[0];
+  if (first) return openStory(first.id);
 }
 export function start() {
   return turnEdition(() => { demo.data.paid = true; demo.data.screen = 'reader'; mark(); }, 'forward', false);
@@ -317,14 +343,17 @@ export function move(delta: number) {
   settleEditionTurn();
   if (demo.data.screen !== 'reader') return;
   if (delta < 0 && demo.data.position === 0) return;
-  let position = Math.max(0, Math.min(8, demo.data.position + delta));
+  const edition = getStories();
+  const navigation = editionNavigation(edition.length);
+  let position = Math.max(0, Math.min(navigation.last, demo.data.position + delta));
+  if (!partnerMomentEnabled && position === navigation.partner) position += delta < 0 ? -1 : 1;
   let screen: State['screen'] = 'reader';
-  if (delta > 0 && demo.data.position === 8) {
-    if (pubVisited().length === 8) {
+  if (delta > 0 && demo.data.position === navigation.last) {
+    if (edition.every(story => pubVisited().includes(story.id))) {
       screen = 'complete';
     } else {
       const missing = getStories().findIndex(st => !pubVisited().includes(st.id));
-      position = missing >= 4 ? missing + 1 : missing;
+      position = navigation.storyPosition(missing);
     }
   }
   if (position === demo.data.position && screen === demo.data.screen) return;
@@ -363,25 +392,25 @@ export function topup() {
   notify('Balance topped up', walletAnchor(), { amount: '+£1', kind: 'received' });
 }
 export function ensureBalance() {
-  if (demo.data.balance >= 20) return false;
+  if (demo.data.balance >= editionPrice) return false;
   demo.data.balance += 100;
   persist();
   showWalletChange('+£1', 'received', 'Automatic demo top-up');
   notify('Automatic demo top-up', walletAnchor(), { amount: '+£1', kind: 'received' });
   return true;
 }
-export function expand(id: string) {
-  if (demo.data.screen !== 'reader' || demo.data.position === 4 || getStories()[storyIndex()]?.id !== id || pubExpanded().includes(id)) return;
+export function unlockEdition(id: string) {
+  if (demo.data.screen !== 'reader' || isPartnerMoment() || getStories()[storyIndex()]?.id !== id || pubExpanded().includes(id)) return;
   ensureBalance();
-  demo.data.expanded[demo.data.publication] ||= [];
-  demo.data.expanded[demo.data.publication].push(id);
-  demo.data.balance -= 20;
+  demo.data.expanded[demo.data.publication] = getStories().map(story => story.id);
+  demo.data.balance -= editionPrice;
+  demo.data.unlockSpend += editionPrice;
   persist();
-  showWalletChange('−20p', 'spent', 'Full article unlocked');
-  notify('Full article unlocked', walletAnchor(), { amount: '−20p', kind: 'spent' });
+  showWalletChange(`−${editionPrice}p`, 'spent', 'Full edition unlocked');
+  notify('Full edition unlocked', walletAnchor(), { amount: `−${editionPrice}p`, kind: 'spent' });
 }
 export function claim() {
-  if (demo.data.screen !== 'reader' || demo.data.position !== 4 || demo.data.reward) return;
+  if (!isPartnerMoment() || demo.data.reward) return;
   demo.data.reward = true;
   demo.data.balance += 10;
   persist();
@@ -400,7 +429,7 @@ export function reset() {
 export const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 export const isSafari = () => isIos() && /safari/i.test(navigator.userAgent) && !/crios|fxios|edgios|opios/i.test(navigator.userAgent);
 export const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-export function canInstall() { return !demo.installed && !isStandalone() && (isIos() || /android/i.test(navigator.userAgent) || Boolean(demo.installPrompt)); }
+export function canInstall() { return !readerContext.preview && !demo.installed && !isStandalone() && (isIos() || /android/i.test(navigator.userAgent) || Boolean(demo.installPrompt)); }
 export async function install() {
   if (demo.installPrompt) {
     const prompt = demo.installPrompt;
@@ -415,8 +444,8 @@ export function registerModelTools() {
   const context = (document as Document & { modelContext?: ModelContext }).modelContext;
   if (!context) return () => {};
   const tools = [
-    { name: 'read_demo_edition', description: 'Read the current fictional edition progress, automatically opened articles, rewards, and simulated wallet balance.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => ({ ...$state.snapshot(demo.data), visited: [...pubVisited()] }) },
-    { name: 'navigate_demo_story', description: 'Move to the next or previous story in the automatic demo reading flow. Articles open and simulated 20p charges happen as the reader scrolls.', inputSchema: { type: 'object', properties: { direction: { type: 'string', enum: ['next', 'previous'] } }, required: ['direction'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
+    { name: 'read_demo_edition', description: 'Read the current fictional edition progress, unlocked articles, rewards, and simulated wallet balance.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => ({ ...$state.snapshot(demo.data), visited: [...pubVisited()] }) },
+    { name: 'navigate_demo_story', description: 'Move to the next or previous story in the automatic demo reading flow. Scrolling beyond a preview unlocks the full edition for one simulated 20p charge.', inputSchema: { type: 'object', properties: { direction: { type: 'string', enum: ['next', 'previous'] } }, required: ['direction'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
       const value = input as { direction?: unknown };
       if (!value || !['next', 'previous'].includes(String(value.direction))) throw new Error('Direction must be next or previous');
       if (demo.data.screen !== 'reader') throw new Error('Open the edition reader first');

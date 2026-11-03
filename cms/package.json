@@ -1,0 +1,35 @@
+{
+  "name": "@point-media/cms",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "npm run generate:importmap",
+    "dev": "next dev --webpack --hostname 0.0.0.0 --port 3000",
+    "prebuild": "npm run generate:importmap && npm run build:reader --prefix ..",
+    "build": "next build --webpack",
+    "start": "next start --hostname 0.0.0.0 --port 3000",
+    "check": "tsc --noEmit",
+    "generate:importmap": "payload generate:importmap",
+    "generate": "payload generate:types && npm run generate:importmap",
+    "test": "node --import tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@payloadcms/db-sqlite": "3.92.1",
+    "@payloadcms/next": "3.92.1",
+    "@payloadcms/richtext-lexical": "3.92.1",
+    "@payloadcms/ui": "3.92.1",
+    "graphql": "^16.11.0",
+    "next": "16.4.4",
+    "payload": "3.92.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "tsx": "^4.20.6"
+  }
+}

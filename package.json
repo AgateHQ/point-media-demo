@@ -3,14 +3,29 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "workspaces": ["cms"],
+  "engines": {
+    "node": ">=24.22.1"
+  },
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "npm run check && vite build",
+    "dev": "concurrently --kill-others -n reader,cms npm:dev:web npm:dev:cms",
+    "dev:web": "vite --host 0.0.0.0",
+    "dev:cms": "npm run dev --workspace @point-media/cms",
+    "build": "npm run build:web && npm run build:cms",
+    "build:web": "npm run check:web && vite build",
+    "build:cms": "npm run build --workspace @point-media/cms",
+    "build:reader": "vite build --config vite.reader.config.ts",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "svelte-check --tsconfig ./tsconfig.json"
+    "check": "npm run check:web && npm run check:cms",
+    "check:web": "svelte-check --tsconfig ./tsconfig.json",
+    "check:cms": "npm run check --workspace @point-media/cms",
+    "test:cms": "npm run test --workspace @point-media/cms",
+    "cms:generate": "npm run generate --workspace @point-media/cms",
+    "start:cms": "npm run start --workspace @point-media/cms"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "concurrently": "^9.2.1",
     "svelte": "^5.57.1",
     "svelte-check": "^4.7.6",
     "typescript": "^5.9.2",
@@ -19,5 +34,9 @@
   "allowScripts": {
     "esbuild@0.28.2": true,
     "fsevents@2.3.3": true
+  },
+  "overrides": {
+    "happy-dom": "^21.0.4",
+    "dompurify": "^3.4.17"
   }
 }

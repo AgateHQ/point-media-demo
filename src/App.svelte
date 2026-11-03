@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demo, currentPub, canInstall, isIos, install, notify, move, registerModelTools, type BeforeInstallPromptEvent } from './demo.svelte';
+  import { demo, currentPub, isPartnerMoment, canInstall, isIos, install, notify, move, registerModelTools, type BeforeInstallPromptEvent } from './demo.svelte';
+  import { readerContext } from './data';
   import { readerGestures } from './gestures';
   import { resetReaderScroll } from './editionNavigation';
   import Header from './components/Header.svelte';
@@ -9,6 +10,7 @@
   import EditionJourney from './components/EditionJourney.svelte';
   import Toast from './components/Toast.svelte';
   import Icon from './components/Icon.svelte';
+  import PreviewTools from './components/PreviewTools.svelte';
 
   let pub = $derived(currentPub());
   let paper = $derived(pub.ink !== '#ffffff');
@@ -27,7 +29,8 @@
     }
   });
   function keydown(event: KeyboardEvent) {
-    if (demo.sheet || demo.data.screen !== 'reader' || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+    if (demo.sheet || event.defaultPrevented || demo.data.screen !== 'reader'
+      || (event.target instanceof Element && event.target.closest('input,textarea,select,video,[contenteditable]'))) return;
     if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1); }
   }
@@ -36,7 +39,7 @@
     const beforeInstall = (event: Event) => { event.preventDefault(); demo.installPrompt = event as BeforeInstallPromptEvent; };
     const installed = () => { demo.installPrompt = null; demo.installed = true; notify('Installed. You can launch the demo from your Home Screen.'); };
     const registerWorker = () => {
-      if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then(registration => registration.update()).catch(() => {});
+      if (!readerContext.preview && 'serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then(registration => registration.update()).catch(() => {});
     };
     window.addEventListener('beforeinstallprompt', beforeInstall);
     window.addEventListener('appinstalled', installed);
@@ -53,10 +56,11 @@
 </script>
 
 <svelte:window onkeydown={keydown} />
-<div class={`publication-shell publication-shell-${pub.id}`} class:article-layout={demo.data.screen === 'reader' && demo.data.position !== 4} style={`--publication-bg:${pub.color};--publication-ink:${pub.ink};--publication-brand:${pub.brand};--publication-accent:${pub.accent};--publication-brand-ink:${pub.brandInk};--shell-canvas:${pub.canvas};--shell-header:${pub.header};--shell-ink:#ffffff;--edition-bg:${pub.color};--edition-ink:${pub.ink}`} use:readerGestures>
+{#if readerContext.preview}<PreviewTools />{/if}
+<div class={`publication-shell publication-shell-${pub.theme || pub.id}`} class:cms-publication={!!pub.theme} class:article-layout={demo.data.screen === 'reader' && !isPartnerMoment()} style={`--publication-bg:${pub.color};--publication-ink:${pub.ink};--publication-brand:${pub.brand};--publication-accent:${pub.accent};--publication-brand-ink:${pub.brandInk};--shell-canvas:${pub.canvas};--shell-header:${pub.header};--shell-ink:${pub.headerInk || '#ffffff'};--edition-bg:${pub.color};--edition-ink:${pub.ink}`} use:readerGestures>
   <Header />
   <main class="stage">
-    <section class={`reader publication-${pub.id}`} class:paper-edition={paper} aria-label="Daily edition">
+    <section class={`reader publication-${pub.theme || pub.id}`} class:paper-edition={paper} aria-label="Daily edition">
       <EditionJourney />
       {#key navigationKey}
         {#if demo.data.screen === 'complete'}<Complete />{:else}<Reader />{/if}

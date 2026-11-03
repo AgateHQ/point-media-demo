@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
-  import { demo, currentPub, getStories, storyIndex, pubExpanded, pubCollected, halfwayProgress, collect, home, claim, move, openSheet } from '../demo.svelte';
+  import { demo, currentPub, getStories, storyIndex, isPartnerMoment, pubExpanded, pubCollected, halfwayProgress, collect, home, claim, move, openSheet } from '../demo.svelte';
   import { articlePreview, storyVideos, storySections } from '../data';
+  import { richTextPreview } from '../editionContent';
   import imageAssets from '../image-assets.json';
   import { readerIsAtBottom } from '../gestures';
   import { reducedMotionPreference } from '../motion';
@@ -12,11 +13,13 @@
   import EditionCard from './EditionCard.svelte';
   import HalfwayMoment from './HalfwayMoment.svelte';
   import FinalArticleMoment from './FinalArticleMoment.svelte';
+  import ArticleRichText from './ArticleRichText.svelte';
+  import StoryVideo from './StoryVideo.svelte';
 
   let pub = $derived(currentPub());
   let index = $derived(storyIndex());
   let story = $derived(getStories()[index]);
-  let ad = $derived(demo.data.position === 4);
+  let ad = $derived(isPartnerMoment());
   let expanded = $derived(pubExpanded().includes(story.id));
   let collected = $derived(pubCollected().includes(story.id));
   let collectedCount = $derived(getStories().filter(item => pubCollected().includes(item.id)).length);
@@ -28,6 +31,8 @@
   let videoId = $derived(!ad ? storyVideos[`${pub.id}:${story.id}`] : '');
   let parts = $derived((expanded ? story.expandedBody : articlePreview(story)).split('\n\n'));
   let section = $derived(storySections[story.id] || 'News');
+  let date = $derived(story.date || '2026-09-16');
+  let dateLabel = $derived(new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(date)));
 
   onMount(() => {
     if (!ad || demo.data.reward) return;
@@ -120,25 +125,31 @@
         <span class="article-section">{section}</span>
       </div>
       <h1>{story.title.replace(/\n/g, ' ')}</h1>
-      <p class="standfirst">{story.subtitle}</p>
-      <div class="article-byline"><span><strong>By {pub.name} team</strong><span class="byline-desk"> · {section}</span></span><time datetime="2026-09-16">16 September 2026</time></div>
+      {#if story.subtitle}<p class="standfirst">{story.subtitle}</p>{/if}
+      <div class="article-byline"><span><strong>By {pub.name} team</strong><span class="byline-desk"> · {section}</span></span><time datetime={date}>{dateLabel}</time></div>
     </header>
     <figure class="article-figure">
       <div class="article-media">
+        {#if story.videoUrl}<StoryVideo url={story.videoUrl} title={`Video: ${story.title}`} />{:else}
         <ResponsiveImage class={`article-image${videoId ? ' video-fallback' : ''}`} image={story.image as keyof typeof imageAssets}
-          alt={story.title.replace(/\n/g, ' ')} sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 760px) calc(100vw - 64px), 696px" priority="high" />
+          alt={story.imageAlt || story.title.replace(/\n/g, ' ')} sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 760px) calc(100vw - 64px), 696px" priority="high" />
         {#if videoId}<BackgroundVideo id={videoId} title={`Background video for ${story.title.replace('\n', ' ')}`} />{/if}
+        {/if}
       </div>
-      <figcaption><span>{section} · {pub.name}</span><span>Photo: Alexander London</span></figcaption>
+      <figcaption><span>{section} · {pub.name}</span><span>{story.richText ? story.imageAlt || (story.videoUrl ? 'Video' : '') : 'Photo: Alexander London'}</span></figcaption>
     </figure>
     </EditionCard>
     <div class="article-copy">
+      {#if story.richText}
+        <ArticleRichText document={expanded ? story.richText : richTextPreview(story.richText)} />
+      {:else}
       <p class="article-lede">{story.body}</p>
       {#each parts as paragraph, i (i)}
         <p class="body-copy">{paragraph}</p>
         {#if i === 0}<aside class="article-pullquote" aria-label="The takeaway"><p>{story.takeaway}</p></aside>{/if}
         {#if i === 1 && parts.length > 2}<div class="ad-block article-ad"><span>Advertisement</span></div>{/if}
       {/each}
+      {/if}
     </div>
     {#if !expanded}<ScrollUnlock storyId={story.id} accent={pub.brand} />{/if}
     {#if finalArticle}

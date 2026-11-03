@@ -12,7 +12,7 @@ export function readerGestures(node: HTMLElement) {
   let touch: Start | null = null;
   let lastSwipeAt = 0;
   const canStart = (target: EventTarget | null) => !demo.sheet && target instanceof Element
-    && !!target.closest('.reader') && !target.closest('button,a,input,select,textarea,dialog,.article-network-strip');
+    && !!target.closest('.reader') && !target.closest('button,a,input,select,textarea,video,iframe,dialog,.article-network-strip');
   const finish = (origin: Start, x: number, y: number) => {
     const dx = x - origin.x, dy = y - origin.y;
     const absX = Math.abs(dx), absY = Math.abs(dy);

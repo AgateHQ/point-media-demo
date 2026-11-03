@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { demo, getStories, pubVisited, pubCollected, halfwayProgress, storyIndex } from '../demo.svelte';
+  import { demo, getStories, pubVisited, pubCollected, halfwayProgress, storyIndex, isPartnerMoment } from '../demo.svelte';
   import { prefersReducedMotion } from '../motion';
 
   let stories = $derived(getStories());
@@ -11,8 +11,8 @@
   let previousCollected = new Set<string>();
   let earnedTimer = 0;
   let complete = $derived(demo.data.screen === 'complete');
-  let partner = $derived(!complete && demo.data.position === 4);
-  let current = $derived(complete ? stories.length + 1 : partner ? 4 : storyIndex() + 1);
+  let partner = $derived(isPartnerMoment());
+  let current = $derived(complete ? stories.length + 1 : partner ? Math.ceil(stories.length / 2) : storyIndex() + 1);
   let opened = $derived(stories.filter(story => visited.includes(story.id)).length);
   let halfway = $derived(halfwayProgress());
   let atMidpoint = $derived(!complete && !partner && current === halfway.target);
@@ -62,7 +62,7 @@
   </div>
 
   <div class="journey-map">
-    <div class="journey-stories" role="progressbar" aria-label="Article position in today’s edition"
+    <div class="journey-stories" style:grid-template-columns={`repeat(${stories.length}, minmax(0, 1fr))`} role="progressbar" aria-label="Article position in today’s edition"
       aria-valuemin="0" aria-valuemax={stories.length} aria-valuenow={Math.min(current, stories.length)} aria-valuetext={announcement}>
       {#each stories as story, i (story.id)}
         <span class="journey-step" class:journey-current={!complete && !partner && i + 1 === current}
@@ -77,9 +77,9 @@
         </span>
       {/each}
     </div>
-    <div class="journey-bonus" aria-label={complete ? 'Bonus article 9 unlocked' : 'Bonus preview after article 8'}>
+    <div class="journey-bonus" aria-label={complete ? `Bonus article ${stories.length + 1} unlocked` : `Bonus preview after article ${stories.length}`}>
       <span class="journey-bonus-marker" aria-hidden="true">
-        {#if complete}9{:else}<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m10 3 1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8Z" /></svg>{/if}
+        {#if complete}{stories.length + 1}{:else}<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m10 3 1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8Z" /></svg>{/if}
       </span>
       <span class="journey-bonus-label">{complete ? 'Unlocked' : 'Just for you'}</span>
     </div>

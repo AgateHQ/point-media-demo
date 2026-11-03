@@ -2,3 +2,11 @@ node_modules/
 dist/
 .sites-runtime/
 .DS_Store
+.env
+.env.*
+!.env.example
+.next/
+*.tsbuildinfo
+cms/data/
+cms/media/
+cms/public/reader/

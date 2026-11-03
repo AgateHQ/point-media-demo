@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demo, currentPub, selectPublication, topup, reset, isIos, isSafari, notify } from '../demo.svelte';
+  import { demo, currentPub, unlockedEditionCount, selectPublication, topup, reset, isIos, isSafari, notify, partnerMomentEnabled } from '../demo.svelte';
   import { publications, money } from '../data';
   import { motionDelay, reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
@@ -14,7 +14,7 @@
   let entering = $state(false);
   let slideToEdition = $state(false);
   let timer = 0;
-  let unlockedCount = $derived(Object.values(demo.data.expanded).reduce((total, ids) => total + new Set(ids).size, 0));
+  let unlockedCount = $derived(unlockedEditionCount());
   let label = $derived(demo.sheet === 'discover' ? 'Discover publications' : demo.sheet === 'network' ? 'Choose a publication' : demo.sheet === 'collection' ? 'Your daily story collection' : demo.sheet === 'install' ? 'Install app instructions' : demo.sheet === 'wallet' ? 'Axate wallet' : 'Network title preview');
 
   $effect(() => {
@@ -117,8 +117,10 @@
       <div class="wallet-sheet-event" class:wallet-sheet-event-visible={!!demo.walletChange.amount} class:wallet-sheet-event-spent={demo.walletChange.kind === 'spent'} aria-hidden="true">
         {#if demo.walletChange.amount}{#key demo.walletChange.id}<strong>{demo.walletChange.amount}</strong><span>{demo.walletChange.label}</span>{/key}{/if}
       </div>
-      <div class="price-row"><span>Full articles</span><span>{unlockedCount} unlocked · {money(unlockedCount * 20)} paid</span></div>
-      <div class="price-row"><span>Partner reward</span><span>{demo.data.reward ? '+10p received' : 'Available in this edition'}</span></div>
+      <div class="price-row"><span>Full editions</span><span>{unlockedCount} unlocked · {money(demo.data.unlockSpend)} paid</span></div>
+      {#if partnerMomentEnabled || demo.data.reward}
+        <div class="price-row"><span>Partner reward</span><span>{demo.data.reward ? '+10p received' : 'Available in this edition'}</span></div>
+      {/if}
       <p class="fine-print">Powered by <a href="https://axate.com" target="_blank" rel="noopener noreferrer"><b>axate</b></a></p><button class="wallet-reset" onclick={reset}>Reset everything</button>
     {/if}
   {/if}

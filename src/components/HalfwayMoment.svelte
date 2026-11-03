@@ -11,7 +11,7 @@
   let celebrate = $derived(progress.reached && !reachedOnArrival);
   let currentCollected = $derived(progress.collected.includes(progress.firstHalf[progress.target - 1].id));
   let description = $derived(progress.reached
-    ? 'Four perspectives, collected. Take a breath. The second half is ready when you are.'
+    ? `${progress.target === 4 ? 'Four' : progress.target} perspectives, collected. Take a breath. The second half is ready when you are.`
     : currentCollected ? 'This card is in your set. Collect the earlier stories to complete your first half.'
     : 'Finish this full story to collect its card. Your halfway milestone is waiting.');
 
@@ -56,7 +56,7 @@
   </div>
 
   <div class="halfway-first-half">
-    <span>{progress.reached ? 'First half, collected' : 'Your first four stories'}</span>
+    <span>{progress.reached ? 'First half, collected' : `Your first ${progress.target} ${progress.target === 1 ? 'story' : 'stories'}`}</span>
     <div class="halfway-stamps">
       {#each progress.firstHalf as story, i (story.id)}
         <span class="halfway-stamp" class:stamp-earned={progress.collected.includes(story.id)}
@@ -86,7 +86,7 @@
     <button class="halfway-set" onclick={() => openSheet('collection')}>View your set <span aria-hidden="true">↗</span></button>
   </div>
   <p class="halfway-preview-note"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="m10 3 1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8Z" /></svg><span>Your secret preview is waiting at the finish.</span></p>
-  <span class="halfway-announcement" role="status" aria-atomic="true">{celebrate ? 'Halfway milestone reached. Your first four full stories are collected. Continue whenever you’re ready.' : ''}</span>
+  <span class="halfway-announcement" role="status" aria-atomic="true">{celebrate ? `Halfway milestone reached. Your first ${progress.target} full stories are collected. Continue whenever you’re ready.` : ''}</span>
 </section>
 
 <style>

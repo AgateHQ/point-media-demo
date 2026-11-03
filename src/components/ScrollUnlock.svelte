@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demo, ensureBalance, expand } from '../demo.svelte';
+  import { demo, editionPrice, getStories, ensureBalance, unlockEdition } from '../demo.svelte';
   import { reducedMotionPreference } from '../motion';
   let { storyId, accent }: { storyId: string; accent: string } = $props();
   let zone: HTMLElement;
@@ -8,8 +8,8 @@
   let progress = $state(0);
   let opening = $state(false);
   let toppedUp = $state(false);
-  let status = $derived(opening ? (toppedUp ? 'Opening full story next' : 'Charging 20p to your wallet')
-    : progress > .72 ? 'Opening full story · 20p' : progress > .15 ? '20p charge approaching' : 'Scroll to continue');
+  let status = $derived(opening ? (toppedUp ? 'Opening full edition next' : `Charging ${editionPrice}p to your wallet`)
+    : progress > .72 ? `Opening edition · ${editionPrice}p` : progress > .15 ? `${editionPrice}p charge approaching` : 'Scroll to continue');
 
   onMount(() => {
     let initialScroll = window.scrollY;
@@ -25,7 +25,7 @@
       if (timer) window.clearTimeout(timer);
       timer = 0;
       if (demo.sheet) { opening = false; return; }
-      expand(storyId);
+      unlockEdition(storyId);
     };
     const motionChanged = () => {
       if (motion.matches && opening && timer) finishOpening();
@@ -81,10 +81,10 @@
 
 <span bind:this={boundary} class="unlock-boundary" aria-hidden="true"></span>
 <footer bind:this={zone} class="scroll-unlock" class:unlocking={opening} data-story={storyId}
-  role="progressbar" aria-label="Full article opens automatically for 20 pence" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(progress * 100)}
+  role="progressbar" aria-label={`Full edition unlocks automatically for ${editionPrice} pence, charged once for all ${getStories().length} articles`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(progress * 100)}
   style={`--unlock-accent:${accent};--unlock-progress:${progress}`}>
-  <strong>{opening ? (toppedUp ? 'Demo balance topped up' : 'Opening full story') : 'Full story · 20p'}</strong>
-  <small>Keep scrolling to unlock · charged automatically</small>
+  <strong>{opening ? (toppedUp ? 'Demo balance topped up' : 'Opening full edition') : `Full edition · ${editionPrice}p`}</strong>
+  <small>Keep scrolling to unlock {getStories().length === 1 ? 'this article' : `all ${getStories().length} articles`} · charged once</small>
   <span class="scroll-unlock-track" aria-hidden="true"><i></i></span>
   <span class="scroll-unlock-status">{status}</span>
 </footer>

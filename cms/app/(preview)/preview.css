@@ -1,0 +1,5 @@
+.reader-preview-fallback { margin: 3rem auto; padding: 2rem; max-width: 650px; color: #18231e; background: #fffdf7; border: 1px solid #deded4; border-radius: 8px; font: 1rem/1.6 Arial, sans-serif; }
+.reader-preview-fallback h1 { color: #18231e; font: 700 2rem/1.2 Georgia, serif; letter-spacing: -.02em; }
+.reader-preview-fallback p { color: #536358; font: inherit; }
+.reader-preview-fallback a { display: inline-block; color: #24543c; margin: .5rem 1rem .5rem 0; }
+.reader-preview-fallback button { padding: .7rem 1rem; margin-right: 1rem; border: 0; border-radius: 4px; background: #18231e; color: white; cursor: pointer; }

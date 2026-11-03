@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demo, currentPub, editionXp, getStories, networkXp, pubCollected, readingInsight, readingStreak, recentReadingHistory, xpRules, home, openStory, openSheet, selectPublication } from '../demo.svelte';
+  import { demo, currentPub, editionXp, getStories, networkXp, pubCollected, readingInsight, readingStreak, recentReadingHistory, xpRules, home, openStory, openSheet, selectPublication, partnerMomentEnabled } from '../demo.svelte';
   import { publications, stories, nextPublicationId } from '../data';
   import { reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
   let pub = $derived(currentPub());
   let nextPub = $derived(publications.find(item => item.id === nextPublicationId(pub.id))!);
-  let preview = $derived(stories[nextPub.storyOrder[3]]);
+  let preview = $derived(stories[nextPub.storyOrder[Math.min(3, nextPub.storyOrder.length - 1)]]);
   let streak = $derived(readingStreak());
   let recentDays = $derived(recentReadingHistory());
   let collectedIds = $derived(pubCollected());
@@ -172,8 +172,8 @@
   });
 
   function again() { home(); }
-  function last() { openStory(getStories()[7].id); }
-  function nextEdition() { selectPublication(pub.id === 'pitchline' ? 'the-scoop' : ['the-scoop','brightwire','full-time','evening-lantern','northgate-ledger','pitchline'][(['the-scoop','brightwire','full-time','evening-lantern','northgate-ledger','pitchline'].indexOf(pub.id) + 1) % 6]); }
+  function last() { openStory(getStories().at(-1)!.id); }
+  function nextEdition() { selectPublication(nextPublicationId(pub.id)); }
 </script>
 
 <div class="completion" aria-labelledby="completion-title">
@@ -199,15 +199,19 @@
       <span class="completion-sr-only">Preview {storyTotal + 1} unlocked.</span>
     </div>
     <div class="completion-passage-labels" aria-hidden="true"><span>Today’s edition</span><span>Just for you</span></div>
-    <h1 id="completion-title">The edition is read.<br /><em>The ninth is yours.</em></h1>
-    <p>Eight stories close today’s issue. Your private proof of tomorrow’s edition follows.</p>
+    <h1 id="completion-title">The edition is read.<br /><em>{storyTotal === 8 ? 'The ninth is yours.' : 'Your bonus is unlocked.'}</em></h1>
+    <p>{storyTotal === 8 ? 'Eight stories' : `${storyTotal} ${storyTotal === 1 ? 'story closes' : 'stories close'}`}{storyTotal === 8 ? ' close' : ''} today’s issue. Your private proof of tomorrow’s edition follows.</p>
   </section>
   <section class="reader-record" aria-labelledby="reader-record-title">
     <header class="reader-record-heading">
       <div><span>Reader’s record</span><h2 id="reader-record-title">Today’s issue, in full</h2></div>
-      <small>Filed · 08 / 08</small>
+      <small>Filed · {String(storyTotal).padStart(2, '0')} / {String(storyTotal).padStart(2, '0')}</small>
     </header>
-    <div class="stats"><div><strong>8</strong><span>ARTICLES READ</span></div><div><strong>{streak} {streak === 1 ? 'day' : 'days'}</strong><span>READING RUN</span></div><div><strong>{demo.data.reward ? '10p' : '0p'}</strong><span>READER CREDIT</span></div></div>
+    <div class="stats">
+      <div><strong>{storyTotal}</strong><span>ARTICLES READ</span></div>
+      <div><strong>{streak} {streak === 1 ? 'day' : 'days'}</strong><span>READING RUN</span></div>
+      {#if partnerMomentEnabled || demo.data.reward}<div><strong>{demo.data.reward ? '10p' : '0p'}</strong><span>READER CREDIT</span></div>{/if}
+    </div>
     <aside class="reading-insight" aria-labelledby="reading-insight-title" data-reading-insight>
       <span class="reading-insight-mark" aria-hidden="true">01</span>
       <div class="reading-insight-copy">
@@ -243,7 +247,7 @@
       <strong aria-label={`+${xp.total} XP earned`}><span class="xp-plus" aria-hidden="true">+</span><span class="xp-counted-value" aria-hidden="true">{displayedEditionXp}</span><small aria-hidden="true"> XP</small></strong>
     </header>
     <dl class="xp-breakdown">
-      <div><dt>Opened<small>{xp.unlockCount} × {xpRules.unlock} XP</small></dt><dd>+{xp.unlockXp}</dd></div>
+      <div><dt>Articles unlocked<small>{xp.unlockCount} × {xpRules.unlock} XP</small></dt><dd>+{xp.unlockXp}</dd></div>
       <div><dt>Finished<small>{xp.fullReadCount} × {xpRules.fullRead} XP</small></dt><dd>+{xp.fullReadXp}</dd></div>
       <div class="xp-completion-line"><dt>Issue filed<small>{xp.completionXp ? 'Edition closed' : 'Still reading'}</small></dt><dd aria-label={`+${xp.completionXp} XP`}><span aria-hidden="true">+<span class="xp-counted-value">{displayedCompletionXp}</span></span></dd></div>
     </dl>
@@ -267,7 +271,7 @@
         ? `Every full story collected in ${pub.name}. The complete issue is now in your set.`
         : `${storyTotal - collectedCount} ${storyTotal - collectedCount === 1 ? 'full story remains' : 'full stories remain'} to complete your daily set.`}</p>
       {#if !perfectEdition}
-        <div class="perfect-progress" role="progressbar" aria-label="Progress towards the Perfect edition badge"
+        <div class="perfect-progress" style:grid-template-columns={`repeat(${storyTotal}, 1fr)`} role="progressbar" aria-label="Progress towards the Perfect edition badge"
           aria-valuemin="0" aria-valuemax={storyTotal} aria-valuenow={collectedCount}
           aria-valuetext={`${collectedCount} of ${storyTotal} full stories collected`}>
           {#each getStories() as item (item.id)}<span class:progress-earned={collectedIds.includes(item.id)} aria-hidden="true"></span>{/each}
@@ -275,7 +279,7 @@
       {/if}
     </div>
     <div class="perfect-meta">
-      <strong>{perfectEdition ? '08 / 08' : `${String(collectedCount).padStart(2, '0')} / ${String(storyTotal).padStart(2, '0')}`}</strong>
+      <strong>{String(collectedCount).padStart(2, '0')} / {String(storyTotal).padStart(2, '0')}</strong>
       <button onclick={() => openSheet('collection')} aria-label="View your daily set">View set <span aria-hidden="true">↗</span></button>
     </div>
     </section>
@@ -286,13 +290,13 @@
     aria-labelledby="secret-preview-title" data-secret-preview
     style={`--secret-brand:${nextPub.brand};--secret-header:${nextPub.header};--secret-paper:${nextPub.color};--secret-ink:${nextPub.ink}`}>
     <span class="secret-reveal-rule" aria-hidden="true"></span>
-    <span class="secret-watermark" aria-hidden="true">09</span>
+    <span class="secret-watermark" aria-hidden="true">{String(storyTotal + 1).padStart(2, '0')}</span>
     <header class="secret-heading">
       <span class="secret-lock" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V7.5a4 4 0 0 1 7.7-1.55" /><rect x="5" y="10" width="14" height="10" rx="1.5" /><path d="M12 14v2.5" /></svg>
       </span>
       <div><span>Next edition unlocked</span><small>Private reader proof</small></div>
-      <strong aria-hidden="true">09</strong>
+      <strong aria-hidden="true">{String(storyTotal + 1).padStart(2, '0')}</strong>
     </header>
     <div class="secret-divider"><span>Advance copy · keep under wraps</span></div>
     <div class="secret-copy">
@@ -301,8 +305,8 @@
       <p>{preview.subtitle}</p>
     </div>
     <footer class="secret-footer">
-      <span><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="m9 2 1.7 5.3L16 9l-5.3 1.7L9 16l-1.7-5.3L2 9l5.3-1.7L9 2Z" /></svg>Issued after 08 / 08</span>
-      <strong>ACCESS 09</strong>
+      <span><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="m9 2 1.7 5.3L16 9l-5.3 1.7L9 16l-1.7-5.3L2 9l5.3-1.7L9 2Z" /></svg>Issued after {String(storyTotal).padStart(2, '0')} / {String(storyTotal).padStart(2, '0')}</span>
+      <strong>ACCESS {String(storyTotal + 1).padStart(2, '0')}</strong>
     </footer>
   </article>
   <button class="primary" onclick={nextEdition} style:background={pub.accent}>Explore another edition <Icon /></button>
