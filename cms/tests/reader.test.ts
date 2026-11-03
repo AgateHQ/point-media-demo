@@ -26,7 +26,7 @@ test('rich-text previews trim text without changing the source or losing structu
   const before = JSON.stringify(document);
   const preview = richTextPreview(document);
   const text = richTextText(document.root).replace(/\n/g, '');
-  assert.equal(richTextText(preview.root).replace(/\n/g, ''), text.slice(0, Math.floor(text.length * .75)));
+  assert.equal(richTextText(preview.root).replace(/\n/g, ''), text.slice(0, Math.floor(text.length * .4)));
   assert.equal(preview.root.children?.[0].tag, 'h2');
   assert.equal(preview.root.children?.[0].children?.[0].format, 1);
   assert.equal(JSON.stringify(document), before);

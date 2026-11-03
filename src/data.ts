@@ -32,7 +32,7 @@ export const legacyPublicationIds:Record<string,string> = {'the-point':'the-scoo
 export function publicationLogo(pub:Publication,variant:'colour'|'white'|'icon'='colour'){return pub.logoUrl || `${readerContext.assetBase || import.meta.env.BASE_URL}newspaper-logos/${pub.id}/${pub.id}_${variant==='icon'?'icon':`logo_${variant}`}.svg`;}
 export function nextPublicationId(id:string){const index=publications.findIndex(p=>p.id===id);return publications[(index+1)%publications.length].id;}
 
-export function articlePreview(story:Story){const full=story.expandedBody;const target=Math.floor(full.length*.75);const sentenceEnd=full.lastIndexOf('. ',target);const cut=sentenceEnd>=target*.8?sentenceEnd+1:full.lastIndexOf(' ',target);return full.slice(0,cut>0?cut:target).trim();}
+export function articlePreview(story:Story){const full=story.expandedBody;const target=Math.floor(full.length*.4);const sentenceEnd=full.lastIndexOf('. ',target);const cut=sentenceEnd>=target*.8?sentenceEnd+1:full.lastIndexOf(' ',target);return full.slice(0,cut>0?cut:target).trim();}
 export const storySections:Record<string,string>={city:'News',music:'Culture',sport:'Sport',life:'Lifestyle',culture:'Arts',local:'Community',weekend:'Travel',last:'Perspective'};
 export function youtubeEmbed(videoId:string){const origin=encodeURIComponent(window.location.origin);return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&disablekb=1&fs=0&iv_load_policy=3&playsinline=1&rel=0&enablejsapi=1&origin=${origin}&widget_referrer=${origin}`;}
 export const asset=(p:string)=>`${readerContext.assetBase || import.meta.env.BASE_URL}images/${p}`;
