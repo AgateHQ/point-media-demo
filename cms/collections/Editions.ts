@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload';
 import { date } from 'payload/shared';
 
 import { publicContentAccess } from './access';
+import { phonePreview } from '../lib/preview';
 
 export const Editions: CollectionConfig = {
   slug: 'editions',
@@ -15,6 +16,10 @@ export const Editions: CollectionConfig = {
     group: 'Editorial',
     description: 'Write your articles, arrange their reading order, and preview the finished edition.',
     preview: ({ id }) => id ? `/preview/editions/${id}` : null,
+    livePreview: {
+      url: ({ data }) => data?.id ? `/preview/editions/${data.id}?live=1` : null,
+      breakpoints: [phonePreview],
+    },
   },
   hooks: {
     beforeValidate: [({ data, originalDoc }) => {

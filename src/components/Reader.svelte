@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import { demo, currentPub, getStories, storyIndex, isPartnerMoment, pubExpanded, pubCollected, halfwayProgress, collect, home, claim, move, openSheet } from '../demo.svelte';
-  import { articlePreview, storyVideos, storySections } from '../data';
+  import { articlePreview, storyVideos, storySections, readerContext } from '../data';
   import { richTextPreview } from '../editionContent';
   import imageAssets from '../image-assets.json';
   import { readerIsAtBottom } from '../gestures';
@@ -31,8 +31,10 @@
   let videoId = $derived(!ad ? storyVideos[`${pub.id}:${story.id}`] : '');
   let parts = $derived((expanded ? story.expandedBody : articlePreview(story)).split('\n\n'));
   let section = $derived(storySections[story.id] || 'News');
-  let date = $derived(story.date || '2026-09-16');
-  let dateLabel = $derived(new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(date)));
+  let date = $derived(story.richText ? story.date : story.date || '2026-09-16');
+  let dateLabel = $derived(date && Number.isFinite(Date.parse(date))
+    ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(date))
+    : 'Edition date not set');
 
   onMount(() => {
     if (!ad || demo.data.reward) return;
@@ -53,6 +55,7 @@
   });
 
   $effect(() => {
+    if (readerContext.preview?.live) return;
     if ((ad ? !demo.data.reward : !expanded) || pauseForHalfway) return;
     let frame = 0;
     let timer = 0;

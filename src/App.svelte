@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demo, currentPub, isPartnerMoment, canInstall, isIos, install, notify, move, registerModelTools, type BeforeInstallPromptEvent } from './demo.svelte';
+  import { demo, currentPub, getStories, isPartnerMoment, canInstall, isIos, install, notify, move, registerModelTools, type BeforeInstallPromptEvent } from './demo.svelte';
   import { readerContext } from './data';
   import { readerGestures } from './gestures';
   import { resetReaderScroll } from './editionNavigation';
@@ -61,10 +61,14 @@
   <Header />
   <main class="stage">
     <section class={`reader publication-${pub.theme || pub.id}`} class:paper-edition={paper} aria-label="Daily edition">
+      {#if readerContext.preview?.live && !getStories().length}
+        <div class="live-preview-empty"><span>Live preview</span><h1>Your edition starts here</h1><p>Add an article in the editor to see it here as you write.</p></div>
+      {:else}
       <EditionJourney />
       {#key navigationKey}
         {#if demo.data.screen === 'complete'}<Complete />{:else}<Reader />{/if}
       {/key}
+      {/if}
     </section>
   </main>
   {#if canInstall()}<footer class="site-footer"><button class="install-button" onclick={install}><Icon name="install" /><span>{isIos() ? 'Add to Home Screen' : 'Install app'}</span></button></footer>{/if}

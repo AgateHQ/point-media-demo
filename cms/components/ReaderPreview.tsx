@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EditionContent } from '../../src/editionContent';
 
-type ReaderModule = {
-  mountEditionPreview: (target: HTMLElement, content: EditionContent) => Promise<() => void | Promise<void>>;
-};
+type ReaderHandle = { destroy: () => void | Promise<void>; update: (content: EditionContent) => void };
+type ReaderModule = { mountEditionPreview: (target: HTMLElement, content: EditionContent) => Promise<ReaderHandle> };
 
 export function ReaderPreview({ content, development, readerOrigin }: {
   content: EditionContent;
@@ -13,11 +12,14 @@ export function ReaderPreview({ content, development, readerOrigin }: {
   readerOrigin?: string;
 }) {
   const target = useRef<HTMLDivElement>(null);
+  const handle = useRef<ReaderHandle | null>(null);
+  const latestContent = useRef(content);
+  latestContent.current = content;
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
     let cancelled = false;
-    let destroy: (() => void | Promise<void>) | undefined;
+    let mounted: ReaderHandle | undefined;
     async function load() {
       try {
         let moduleUrl = '/reader/reader.js';
@@ -35,16 +37,23 @@ export function ReaderPreview({ content, development, readerOrigin }: {
         }
         const reader = await import(/* webpackIgnore: true */ moduleUrl) as ReaderModule;
         if (cancelled || !target.current) return;
-        destroy = await reader.mountEditionPreview(target.current, content);
-        if (cancelled) await destroy();
-        else setStatus('ready');
+        const mountingContent = latestContent.current;
+        mounted = await reader.mountEditionPreview(target.current, mountingContent);
+        if (cancelled) await mounted.destroy();
+        else {
+          if (latestContent.current !== mountingContent) mounted.update(latestContent.current);
+          handle.current = mounted;
+          setStatus('ready');
+        }
       } catch (error) {
         if (!cancelled) { console.error('Edition reader preview could not load', error); setStatus('error'); }
       }
     }
     void load();
-    return () => { cancelled = true; void destroy?.(); };
-  }, [content, development, readerOrigin]);
+    return () => { cancelled = true; handle.current = null; void mounted?.destroy(); };
+  }, [development, readerOrigin]);
+
+  useEffect(() => { handle.current?.update(content); }, [content]);
 
   return <>
     {status !== 'ready' && <section className="reader-preview-fallback" role="status">

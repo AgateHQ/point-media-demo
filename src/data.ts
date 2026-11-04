@@ -48,7 +48,7 @@ export function configureEditionPreview(content: EditionContent, assetBase: stri
   const mapped = content.articles.map((article): Story => ({
     id: `cms-article-${article.id}`, title: article.title, tag: 'IN THIS EDITION', subtitle: '', body: '',
     expandedBody: richTextText(article.body.root), takeaway: '', image: article.imageUrl || '', imageAlt: article.imageAlt,
-    videoUrl: article.videoUrl, richText: article.body, date: content.startDate,
+    videoUrl: article.videoUrl, richText: article.body, date: content.startDate || undefined,
   }));
   stories.splice(0, stories.length, ...storiesData, ...mapped);
   publications.splice(0, publications.length, ...demoPublications, {

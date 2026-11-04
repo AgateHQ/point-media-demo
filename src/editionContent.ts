@@ -17,6 +17,7 @@ export interface RichTextNode {
 export interface RichTextDocument { root: RichTextNode; }
 export interface EditionContent {
   id: number;
+  live?: boolean;
   publication: { id: number; name: string; headline: string; logoUrl?: string };
   startDate: string;
   endDate: string;
@@ -28,6 +29,13 @@ export interface EditionContent {
     imageAlt?: string;
     videoUrl?: string;
   }[];
+}
+
+// Keep the article being read when rows move, and follow a newly edited article.
+export function articleToPreview(previous: EditionContent, next: EditionContent, currentId?: string) {
+  const previousById = new Map(previous.articles.map(article => [article.id, article]));
+  const changed = next.articles.find(article => JSON.stringify(previousById.get(article.id)) !== JSON.stringify(article));
+  return changed?.id || next.articles.find(article => article.id === currentId)?.id || next.articles[0]?.id;
 }
 
 export function richTextText(node: RichTextNode): string {

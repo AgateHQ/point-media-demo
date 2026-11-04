@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { demo, currentPub, home, openSheet } from '../demo.svelte';
+  import { demo, currentPub, getStories, home, openSheet } from '../demo.svelte';
   import { money } from '../data';
   import Icon from './Icon.svelte';
   import PublicationLogo from './PublicationLogo.svelte';
@@ -12,7 +12,7 @@
       <PublicationLogo publication={pub} variant="white" class="header-wordmark" decorative />
       <PublicationLogo publication={pub} variant="icon" class="header-brand-icon" decorative />
     </button>
-    <button class="discover-button" onclick={() => openSheet('discover')} style={`--discover-accent:${pub.accent}`}>
+    <button class="discover-button" disabled={!getStories().length} onclick={() => openSheet('discover')} style={`--discover-accent:${pub.accent}`}>
       <Icon name="discover" /><span>Discover</span>
     </button>
   </div>

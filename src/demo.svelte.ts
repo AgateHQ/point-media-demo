@@ -1,6 +1,7 @@
 import { publications, stories, legacyPublicationIds, storySections, readerContext } from './data';
 import { editionNavigation } from './editionContent';
 import { settleEditionTurn, turnEdition } from './editionNavigation';
+import { readerRuntime } from './readerRuntime.svelte';
 
 export interface State {
   paid: boolean;
@@ -48,6 +49,7 @@ function isReadingDays(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(day => typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day));
 }
 function restore(): State {
+  if (readerContext.preview?.live) return fresh();
   try {
     const s = JSON.parse(localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey) || 'null');
     const hadReadingDays = isReadingDays(s?.readingDays);
@@ -134,14 +136,17 @@ export const demo = $state({
 });
 demo.discoverIndex = Math.max(0, publications.findIndex(p => p.id === demo.data.publication));
 
-export function currentPub() { return publications.find(p => p.id === demo.data.publication)!; }
+export function currentPub() { readerRuntime.revision; return publications.find(p => p.id === demo.data.publication)!; }
 export function getStories() { return currentPub().storyOrder.map(i => stories[i]); }
 export function storyIndex() { return editionNavigation(getStories().length).storyIndex(demo.data.position); }
 export function isPartnerMoment() { return partnerMomentEnabled && demo.data.screen === 'reader' && demo.data.position === editionNavigation(getStories().length).partner; }
 export function pubVisited() { return demo.data.visited[demo.data.publication] || []; }
-export function pubExpanded() { return demo.data.expanded[demo.data.publication] || []; }
+export function pubExpanded() {
+  if (readerContext.preview?.live && demo.data.publication === readerContext.publicationId) return getStories().map(story => story.id);
+  return demo.data.expanded[demo.data.publication] || [];
+}
 export function unlockedEditionCount() {
-  return publications.filter(publication => publication.storyOrder
+  return publications.filter(publication => publication.storyOrder.length > 0 && publication.storyOrder
     .every(index => demo.data.expanded[publication.id]?.includes(stories[index].id))).length;
 }
 export function pubCollected() { return demo.data.collected[demo.data.publication] || []; }
@@ -282,6 +287,7 @@ export function openStory(id: string) {
   }, direction, animate);
 }
 export function persist() {
+  if (readerContext.preview?.live) return;
   const json = JSON.stringify(demo.data);
   try { localStorage.setItem(storageKey, json); } catch { /* Fall back to session storage. */ }
   try { sessionStorage.setItem(storageKey, json); } catch { /* Reading still works without storage. */ }
@@ -344,6 +350,7 @@ export function move(delta: number) {
   if (demo.data.screen !== 'reader') return;
   if (delta < 0 && demo.data.position === 0) return;
   const edition = getStories();
+  if (!edition.length) return;
   const navigation = editionNavigation(edition.length);
   let position = Math.max(0, Math.min(navigation.last, demo.data.position + delta));
   if (!partnerMomentEnabled && position === navigation.partner) position += delta < 0 ? -1 : 1;

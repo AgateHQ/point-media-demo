@@ -10,5 +10,16 @@
 .edition-guide p:last-child { margin-bottom: 0; line-height: 1.5; }
 .edition-guide__preview { flex-shrink: 0; }
 .edition-guide__preview p { font-size: .8rem; color: var(--theme-elevation-600); }
+.edition-guide__preview .editorial-button { cursor: pointer; border: 0; font: inherit; font-weight: 600; }
+.edition-saved-preview { display: inline-block; margin: .75rem 0 0 1rem; font-size: .8rem; }
 .edition-articles > .array-field__header h3 { font-size: 1.5rem; }
+.collection-edit .live-preview-toolbar-controls__breakpoint,
+.collection-edit .live-preview-toolbar-controls__device-size,
+.collection-edit .live-preview-toolbar-controls__zoom { display: none; }
+.collection-edit .live-preview-toolbar-controls::before { content: 'Phone · 390 × 844'; font-size: .8rem; }
+.collection-edit .live-preview-window__main { overflow: auto; }
+@media (min-width: 1025px) {
+  .collection-edit .live-preview-window { width: 430px; }
+  .collection-edit__main--is-live-previewing { flex: 1; min-width: 0; }
+}
 @media (max-width: 800px) { .edition-guide { flex-direction: column; align-items: flex-start; } }
