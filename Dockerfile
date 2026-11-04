@@ -20,7 +20,7 @@ WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
-    PORT=3000 \
+    PORT=8080 \
     DATABASE_URL=file:/data/payload.db \
     MEDIA_DIR=/data/media
 RUN apt-get update \
@@ -31,6 +31,6 @@ COPY --from=build --chown=node:node /app/cms/.next/standalone ./
 COPY --from=build --chown=node:node /app/cms/.next/static ./cms/.next/static
 COPY --from=build --chown=node:node /app/cms/public ./cms/public
 COPY --chmod=755 scripts/docker-entrypoint.sh /usr/local/bin/point-media-entrypoint
-EXPOSE 3000
+EXPOSE 8080
 ENTRYPOINT ["point-media-entrypoint"]
 CMD ["node", "cms/server.js"]

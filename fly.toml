@@ -9,7 +9,7 @@ kill_timeout = "30s"
 [env]
   NODE_ENV = "production"
   HOSTNAME = "0.0.0.0"
-  PORT = "3000"
+  PORT = "8080"
   DATABASE_URL = "file:/data/payload.db"
   MEDIA_DIR = "/data/media"
 
@@ -21,7 +21,7 @@ kill_timeout = "30s"
   snapshot_retention = 14
 
 [http_service]
-  internal_port = 3000
+  internal_port = 8080
   force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true

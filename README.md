@@ -53,16 +53,16 @@ Set **Brand colour** to a three- or six-digit hex value. The reader derives a ti
 
 ## Deploy on Fly.io
 
-`Dockerfile` builds the Svelte reader assets and the standalone Next/Payload server together. `fly.toml` runs one Machine in London (`lhr`) with a persistent volume mounted at `/data`: SQLite is `/data/payload.db` and uploads are `/data/media`. Change the region if needed and keep the volume in the same region. Fly volumes belong to one Machine and are not replicated automatically: keep this configuration at one Machine. See [Fly volume storage](https://docs.fly.io/volumes/overview).
+`Dockerfile` builds the Svelte reader assets and the standalone Next/Payload server together. Production listens on `0.0.0.0:8080`: the container's `PORT`, Docker `EXPOSE`, and Fly's `http_service.internal_port` all agree. `fly.toml` runs one Machine in London (`lhr`) with a persistent volume mounted at `/data`: SQLite is `/data/payload.db` and uploads are `/data/media`. Change the region if needed and keep the volume in the same region. Fly volumes belong to one Machine and are not replicated automatically: keep this configuration at one Machine. See [Fly volume storage](https://docs.fly.io/volumes/overview).
 
-Install/login to `flyctl`, choose a globally unique app name, and replace `point-media-change-me` in `fly.toml`. From the repository root:
+Install/login to `flyctl`, choose a globally unique app name, and set `app` in `fly.toml` to it (currently `point-beta`). From the repository root:
 
 ```sh
-fly apps create YOUR_APP_NAME
-fly volumes create point_media_data --region lhr --size 3 --app YOUR_APP_NAME
-fly secrets set PAYLOAD_SECRET="$(openssl rand -hex 32)" --app YOUR_APP_NAME
-fly deploy --app YOUR_APP_NAME --ha=false
-fly scale count 1 --app YOUR_APP_NAME
+fly apps create point-beta
+fly volumes create point_media_data --region lhr --size 3 --app point-beta
+fly secrets set PAYLOAD_SECRET="$(openssl rand -hex 32)" --app point-beta
+fly deploy --app point-beta --config ./fly.toml --ha=false
+fly scale count 1 --app point-beta
 ```
 
 Open `https://YOUR_APP_NAME.fly.dev/` for the publication directory, `/admin` for editing, and `/<publication-slug>` for a reader. The runtime requires a stable secret; do not replace it on each deploy. The Docker build uses a separate disposable build secret and never packages local `.env`, databases, uploaded files or `node_modules` from your machine. A first deployment starts with an empty database: create publications/editions in the deployed admin. Existing local content is not uploaded by deployment.
@@ -82,11 +82,31 @@ For a local container check:
 
 ```sh
 docker build -t point-media .
-docker run --rm -p 3000:3000 -v point-media-data:/data \
+docker run --rm -p 3000:8080 -v point-media-data:/data \
   -e PAYLOAD_SECRET="$(openssl rand -hex 32)" point-media
 ```
 
 The public directory is served by Next on Fly; GitHub Pages continues to host only the static demo. `npm run test:cms` includes a production-mode test that migrates an empty temporary database, uploads a logo, saves a publication, restarts Payload and verifies persistence.
+
+### Recover a failed first deployment
+
+For `point-beta`, run these commands from the repository root after `fly auth login`:
+
+```sh
+fly ips list --app point-beta
+fly config show --app point-beta --toml
+```
+
+If the app has no shared IPv4, allocate one with `fly ips allocate-v4 --shared --app point-beta`. If public IPv6 allocation failed with `org_slug is only supported with private_v6 type`, retry explicitly with `fly ips allocate-v6 --app point-beta`, without `--org`, `--network` or `--private`. This site needs public addresses; `--private` creates an address for Flycast private networking. Update `flyctl` if the same allocation error persists. See [Fly public IP allocation](https://docs.fly.io/networking/app-services/#allocate-a-public-or-private-ip-to-the-app).
+
+Redeploy using this repository's explicit configuration:
+
+```sh
+fly deploy --app point-beta --config ./fly.toml --ha=false --wait-timeout 5m
+fly checks list --app point-beta
+```
+
+When deploying through Fly's dashboard/GitHub integration, commit the updated `Dockerfile` and `fly.toml`, and use the repository-root `fly.toml` for the deployment. A previously built image can also use the corrected port when deployed with this file: its `[env] PORT = "8080"` overrides the image's default. The running service must show `internal_port = 8080` and Next must listen on `0.0.0.0:8080`. Development continues to use port 3000. If checks still fail after the ports agree, inspect `fly logs --app point-beta` and `fly checks list --app point-beta`; the health endpoint checks SQLite initialization as well as HTTP availability.
 
 **Admin and API writes retain the existing open shared-editor access, including on Fly. Anyone with the deployed URL can edit/delete content.** The `PAYLOAD_SECRET` secures Payload internals; it does not add an editor login. The custom `open-editor` strategy is in `cms/collections/Editors.ts`, and CRUD rules are in `cms/collections/access.ts`.
 
