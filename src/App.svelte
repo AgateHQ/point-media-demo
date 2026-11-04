@@ -39,7 +39,7 @@
     const beforeInstall = (event: Event) => { event.preventDefault(); demo.installPrompt = event as BeforeInstallPromptEvent; };
     const installed = () => { demo.installPrompt = null; demo.installed = true; notify('Installed. You can launch the demo from your Home Screen.'); };
     const registerWorker = () => {
-      if (!readerContext.preview && 'serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then(registration => registration.update()).catch(() => {});
+      if (!readerContext.edition && 'serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then(registration => registration.update()).catch(() => {});
     };
     window.addEventListener('beforeinstallprompt', beforeInstall);
     window.addEventListener('appinstalled', installed);

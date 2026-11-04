@@ -22,7 +22,7 @@ export interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 export type SheetKind = 'discover' | 'network' | 'wallet' | 'install' | 'collection';
-const storageKey = readerContext.preview ? `the-point-preview-edition-${readerContext.preview.id}` : 'the-point-demo-v3';
+const storageKey = readerContext.edition ? `the-point-${readerContext.preview ? 'preview' : 'publication'}-edition-${readerContext.edition.id}` : 'the-point-demo-v3';
 export const editionPrice = 20;
 // Keep the partner content and its saved position available for a later return.
 export const partnerMomentEnabled = false;
@@ -322,6 +322,10 @@ export function showWalletChange(amount: string, kind: 'spent' | 'received', lab
   }, 1600);
 }
 export function openSheet(kind: SheetKind) {
+  if (kind === 'discover' && readerContext.edition?.mode === 'publication') {
+    window.location.assign('/publications');
+    return;
+  }
   settleEditionTurn();
   if (kind === 'discover') demo.discoverIndex = Math.max(0, publications.findIndex(p => p.id === demo.data.publication));
   demo.sheet = kind;
@@ -436,7 +440,7 @@ export function reset() {
 export const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 export const isSafari = () => isIos() && /safari/i.test(navigator.userAgent) && !/crios|fxios|edgios|opios/i.test(navigator.userAgent);
 export const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-export function canInstall() { return !readerContext.preview && !demo.installed && !isStandalone() && (isIos() || /android/i.test(navigator.userAgent) || Boolean(demo.installPrompt)); }
+export function canInstall() { return !readerContext.edition && !demo.installed && !isStandalone() && (isIos() || /android/i.test(navigator.userAgent) || Boolean(demo.installPrompt)); }
 export async function install() {
   if (demo.installPrompt) {
     const prompt = demo.installPrompt;

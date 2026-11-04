@@ -18,7 +18,8 @@ export interface RichTextDocument { root: RichTextNode; }
 export interface EditionContent {
   id: number;
   live?: boolean;
-  publication: { id: number; name: string; headline: string; logoUrl?: string };
+  mode?: 'preview' | 'publication';
+  publication: { id: number; name: string; headline: string; slug?: string; brandColor?: string; logoUrl?: string };
   startDate: string;
   endDate: string;
   articles: {

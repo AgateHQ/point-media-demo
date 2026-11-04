@@ -1,0 +1,17 @@
+.git
+.github
+.codex
+.agents
+node_modules
+**/node_modules
+dist
+**/.next
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+cms/data
+cms/media
+cms/public/reader
+.sites-runtime
+.DS_Store

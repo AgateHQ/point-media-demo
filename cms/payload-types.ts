@@ -199,7 +199,15 @@ export interface Media {
 export interface Publication {
   id: number;
   name: string;
+  /**
+   * Generated from the name on first save. The public reader lives at /your-slug. Renaming the publication keeps this address.
+   */
+  slug?: string | null;
   headline: string;
+  /**
+   * One hex colour generates the masthead, buttons, accents, paper and readable text colours.
+   */
+  brandColor?: string | null;
   logo: number | Media;
   /**
    * Save the publication, then create and open its editions here.
@@ -325,7 +333,9 @@ export interface EditionsSelect<T extends boolean = true> {
  */
 export interface PublicationsSelect<T extends boolean = true> {
   name?: T;
+  slug?: T;
   headline?: T;
+  brandColor?: T;
   logo?: T;
   editions?: T;
   updatedAt?: T;

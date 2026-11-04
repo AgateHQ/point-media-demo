@@ -1,8 +1,9 @@
 import storiesData from './stories.json';
 import { richTextText, type EditionContent, type RichTextDocument } from './editionContent';
+import { publicationTheme } from './publicationTheme';
 export interface Story {id:string; tag:string; title:string; subtitle:string; body:string; expandedBody:string; image:string; takeaway:string; richText?:RichTextDocument; imageAlt?:string; videoUrl?:string; date?:string}
 export const stories:Story[] = [...storiesData];
-export const readerContext: { preview: EditionContent | null; publicationId: string; assetBase?: string } = { preview: null, publicationId: 'the-scoop' };
+export const readerContext: { edition: EditionContent | null; preview: EditionContent | null; publicationId: string; assetBase?: string } = { edition: null, preview: null, publicationId: 'the-scoop' };
 
 export interface Publication {
   id: string;
@@ -42,21 +43,22 @@ export const money=(n:number)=>`£${(n/100).toFixed(2)}`;
 
 const demoPublications = [...publications];
 export function configureEditionPreview(content: EditionContent, assetBase: string) {
-  const slug = content.publication.name.toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, '-').replace(/-$/, '');
-  const theme = demoPublications.find(pub => pub.name === content.publication.name || pub.id === slug || pub.id === `the-${slug}`) || demoPublications[0];
+  const publicReader = content.mode === 'publication';
   const id = `cms-edition-${content.id}`;
   const mapped = content.articles.map((article): Story => ({
     id: `cms-article-${article.id}`, title: article.title, tag: 'IN THIS EDITION', subtitle: '', body: '',
     expandedBody: richTextText(article.body.root), takeaway: '', image: article.imageUrl || '', imageAlt: article.imageAlt,
     videoUrl: article.videoUrl, richText: article.body, date: content.startDate || undefined,
   }));
-  stories.splice(0, stories.length, ...storiesData, ...mapped);
-  publications.splice(0, publications.length, ...demoPublications, {
-    ...theme, id, name: content.publication.name, subtitle: content.publication.headline,
-    storyOrder: mapped.map((_, index) => storiesData.length + index),
-    logoUrl: content.publication.logoUrl, theme: theme.id, header: '#ffffff', headerInk: '#111111',
+  const demoStories = publicReader ? [] : storiesData;
+  stories.splice(0, stories.length, ...demoStories, ...mapped);
+  publications.splice(0, publications.length, ...(publicReader ? [] : demoPublications), {
+    ...publicationTheme(content.publication.brandColor), id, name: content.publication.name, subtitle: content.publication.headline,
+    storyOrder: mapped.map((_, index) => demoStories.length + index),
+    logoUrl: content.publication.logoUrl, theme: 'cms',
   });
-  readerContext.preview = content;
+  readerContext.edition = content;
+  readerContext.preview = publicReader ? null : content;
   readerContext.publicationId = id;
   readerContext.assetBase = assetBase;
 }

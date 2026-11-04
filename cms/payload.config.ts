@@ -10,6 +10,7 @@ import { Editions } from './collections/Editions';
 import { Editors } from './collections/Editors';
 import { Media } from './collections/Media';
 import { Publications } from './collections/Publications';
+import { migrations } from './migrations';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(process.cwd(), 'data');
@@ -34,6 +35,10 @@ export default buildConfig({
   editor: lexicalEditor({ features: ({ defaultFeatures }) => [...defaultFeatures, FixedToolbarFeature()] }),
   db: sqliteAdapter({
     client: { url: process.env.DATABASE_URL || `file:${path.resolve(dataDir, 'payload.db')}` },
+    migrationDir: path.resolve(dirname, 'migrations'),
+    prodMigrations: migrations,
+    busyTimeout: 5000,
+    wal: true,
   }),
   sharp,
   graphQL: { disable: true },
@@ -47,5 +52,14 @@ export default buildConfig({
       data: { name: 'Shared editor' },
       overrideAccess: true,
     });
+    // The nullable DB column lets existing development content gain URLs
+    // without rebuilding or deleting its tables.
+    const { docs: publications } = await payload.find({
+      collection: 'publications', depth: 0, joins: false, pagination: false, overrideAccess: true,
+      where: { or: [{ slug: { exists: false } }, { slug: { equals: '' } }] },
+    });
+    for (const publication of publications) {
+      await payload.update({ collection: 'publications', id: publication.id, data: { name: publication.name }, overrideAccess: true });
+    }
   },
 });

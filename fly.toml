@@ -1,0 +1,44 @@
+app = "point-beta"
+primary_region = "lhr"
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  HOSTNAME = "0.0.0.0"
+  PORT = "3000"
+  DATABASE_URL = "file:/data/payload.db"
+  MEDIA_DIR = "/data/media"
+
+# SQLite and uploads share one persistent volume on one Machine.
+[[mounts]]
+  source = "point_media_data"
+  destination = "/data"
+  initial_size = "3GB"
+  snapshot_retention = 14
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "60s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "1gb"
+
+# No release_command: Fly release Machines cannot mount this SQLite volume.
+# Payload applies the checked-in migrations when it initializes on the app
+# Machine; /health verifies both the server and database before accepting it.

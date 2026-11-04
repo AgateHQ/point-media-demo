@@ -22,6 +22,8 @@ export function toEditionContent(value: unknown, live = false): EditionContent {
       id: typeof publication.id === 'number' ? publication.id : 0,
       name: text(publication.name) || 'Your publication',
       headline: text(publication.headline),
+      slug: text(publication.slug) || undefined,
+      brandColor: text(publication.brandColor) || undefined,
       logoUrl: text(logo.url) || undefined,
     },
     startDate: date(edition.startDate), endDate: date(edition.endDate),

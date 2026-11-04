@@ -9,20 +9,20 @@ Use Node.js 24.22.1 or newer (`.node-version` is provided).
 npm install
 npm run dev
 
-The reader runs at http://localhost:5173 and the CMS at http://localhost:3000/admin. The reader's development server also proxies `/admin` and `/api` to the CMS, so http://localhost:5173/admin works too. No login or first-user setup is required: everyone uses a shared editor identity and can create, edit, and delete content.
+The static demo runs at http://localhost:5173. The database-backed publication directory runs at http://localhost:3000 and the CMS at http://localhost:3000/admin. The static demo’s development server also proxies `/admin`, `/api`, `/preview`, `/publications` and publication slugs to the CMS, so http://localhost:5173/admin works too. Open `/publications` on either server to explore CMS publications. No login or first-user setup is required: everyone uses a shared editor identity and can create, edit, and delete content.
 
 `npm run dev:web` and `npm run dev:cms` start either app independently. SQLite is created automatically in `cms/data/payload.db`; uploaded files are stored in `cms/media/`. Both survive restarts and are ignored by Git.
 
 ## Editorial workflow
 
-1. Open **Publications**, create a publication, and enter its name, headline, and uploaded logo. Media uploads ask for a description / alt text.
+1. Open **Publications**, create a publication, and enter its name, headline, uploaded logo, and one **Brand colour** hex value (for example `#2563eb`). The **Slug** is generated from its name on first save. Media uploads ask for a description / alt text.
 2. Save the publication, then use **Add new** in its **Editions** section. The publication is filled in automatically. Set the start and end dates; the edition is named from those dates. The end cannot precede the start.
 3. Add articles inside the edition. Each has a title, a Lexical rich-text body (formatting toolbar, headings, links, lists, quotes, and inline images), and a main image or video URL.
 4. Collapse article rows and drag their handles into reading order, then save the edition. The array order returned by the API is the reading order. Articles belong to that edition rather than a separate shared article library.
 
 **Articles & editions** is the main editorial workspace. Article writing is the main panel, with publication and dates in the edition details sidebar. Article fields open immediately; use **Collapse All** when arranging the reading order.
 
-Save a new edition once, then click **Live preview** above the articles to open Payload’s split-screen reader while you write. Unsaved headlines, rich text, images, video links, publication selection, dates, and article ordering update automatically. Mobile, tablet, desktop, and responsive sizes are available. The reader follows the article you edit, preserves its scroll position while typing, and shows full article text without simulated charges or automatic page turns. Live changes stay in memory; click **Save** to store them. **Hide live preview** returns to the full editor.
+Save a new edition once, then click **Live preview** above the articles to open Payload’s split-screen reader while you write. Unsaved headlines, rich text, images, video links, publication selection, dates, and article ordering update automatically. Both live and saved previews always use a 390 × 844 phone viewport. The reader follows the article you edit, preserves its scroll position while typing, and shows full article text without simulated charges or automatic page turns. Live changes stay in memory; click **Save** to store them. **Hide live preview** returns to the full editor.
 
 To test the saved edition’s reading experience, save it and click **Saved preview** above the articles (or **Preview** next to Save). This opens a new tab at `/preview/editions/<id>` using the same Svelte reader, layouts, and components as the root demo. It includes swipe/arrow-key navigation, directional transitions, the reading journey, simulated 20p edition unlocking and wallet top-ups, story cards and collections, halfway and finish moments, completion XP/streaks, and publication discovery. Article counts, milestone copy, and navigation adapt to the saved edition's length. Rich text, uploaded images, video links, the publication logo/headline, and the edition date come from Payload.
 
@@ -30,7 +30,7 @@ Preview wallet/progress use a separate localStorage key for each edition and nev
 
 In development, the preview loads the reader from the same host on Vite port 5173; run `npm run dev` for both apps. Set `READER_DEV_ORIGIN` in `cms/.env` if Vite is on another port/host. A CMS production build bundles the same reader and its assets into `cms/public/reader/`, so production previews work without a Vite server.
 
-The CMS is independent of the existing reader's demo dataset in `src/data.ts` and `src/stories.json`; saving editorial content does not yet replace the demo's eight-story editions or payment/collection state.
+The static GitHub Pages demo keeps its fictional dataset. The Fly-hosted publication directory and public readers use the SQLite-backed CMS content. Public readers have no editorial preview toolbar, show only their own publication’s articles, and keep browser progress separate from both previews and the static demo. Wallet/payments remain simulated; no real payment service is connected.
 
 Payload exposes the content at `/api/publications`, `/api/editions`, and `/api/media`. For example, `/api/editions?where[publication][equals]=1&sort=-startDate&depth=1` returns a publication's editions with their ordered articles and populated media. The publication response also includes its related editions through a join field. Delete a publication's editions before deleting the publication.
 
@@ -43,11 +43,52 @@ npm run preview
 
 `npm run check` checks both apps. `npm run test:cms` checks the content workflow against an isolated temporary SQLite database, plus variable-length reader navigation, rich-text preview trimming, and media/link handling. The CMS regenerates its admin import map automatically before development startup and production builds. `npm run cms:generate` regenerates Payload types and the admin import map after changing fields or editor features. If an already-running dev server reports a missing custom component after an edit, refresh the admin; restarting `npm run dev` will regenerate the map before Next.js loads it.
 
-## Later hosting on Fly.io
+## Publication URLs and colours
 
-The CMS uses Next.js with standalone output. Include `cms/public/` (including the generated `reader/` assets) and `.next/static/` when packaging the standalone server. When deploying, provide a persistent volume for both SQLite and uploads, for example `DATABASE_URL=file:/data/payload.db` and `MEDIA_DIR=/data/media`, plus a stable `PAYLOAD_SECRET`. Keep this SQLite setup on one app machine; scaling to multiple machines would require shared database/media storage. Generate/apply Payload database migrations for production schema changes (development currently pushes schema changes automatically). Fly deployment is not configured in this change.
+Every publication has a unique public URL such as `/test-gazette`. The slug is generated on first save, with numeric suffixes for duplicate names; renaming a publication keeps its URL. You can edit the slug explicitly to change its address. Reserved app routes such as `admin`, `api`, `reader`, `preview`, and `health` cannot be used. Existing local publications receive slugs when the CMS next starts.
 
-Admin access and content writes are intentionally open, including in production. The custom `open-editor` strategy in `cms/collections/Editors.ts` supplies the shared identity; the collection access rules in `cms/collections/access.ts` permit public CRUD. Replace those together when authentication becomes necessary.
+A public URL selects that publication’s most recent saved edition whose start date has arrived. Future editions remain preview-only until their start date. If no started edition has articles, the publication shows a “next edition is on its way” page. Unknown publication URLs return 404. Saved edits become visible on refresh; there is no separate publish/draft workflow.
+
+Set **Brand colour** to a three- or six-digit hex value. The reader derives a tinted paper/background, masthead, buttons and accent colours, choosing dark or light text for readable contrast. The same palette appears in editorial previews. Public readers use the uploaded logo and publication headline. **Preview** on a publication opens its public URL.
+
+## Deploy on Fly.io
+
+`Dockerfile` builds the Svelte reader assets and the standalone Next/Payload server together. `fly.toml` runs one Machine in London (`lhr`) with a persistent volume mounted at `/data`: SQLite is `/data/payload.db` and uploads are `/data/media`. Change the region if needed and keep the volume in the same region. Fly volumes belong to one Machine and are not replicated automatically: keep this configuration at one Machine. See [Fly volume storage](https://docs.fly.io/volumes/overview).
+
+Install/login to `flyctl`, choose a globally unique app name, and replace `point-media-change-me` in `fly.toml`. From the repository root:
+
+```sh
+fly apps create YOUR_APP_NAME
+fly volumes create point_media_data --region lhr --size 3 --app YOUR_APP_NAME
+fly secrets set PAYLOAD_SECRET="$(openssl rand -hex 32)" --app YOUR_APP_NAME
+fly deploy --app YOUR_APP_NAME --ha=false
+fly scale count 1 --app YOUR_APP_NAME
+```
+
+Open `https://YOUR_APP_NAME.fly.dev/` for the publication directory, `/admin` for editing, and `/<publication-slug>` for a reader. The runtime requires a stable secret; do not replace it on each deploy. The Docker build uses a separate disposable build secret and never packages local `.env`, databases, uploaded files or `node_modules` from your machine. A first deployment starts with an empty database: create publications/editions in the deployed admin. Existing local content is not uploaded by deployment.
+
+The checked-in initial migration creates the production database on the mounted volume. Payload applies pending migrations during initialization; `/health` checks the server and database before Fly routes traffic. There is no Fly `release_command`, because release Machines do not mount persistent volumes. See [Payload runtime migrations](https://payloadcms.com/docs/database/migrations#running-migrations-in-production) and [Fly release commands](https://docs.fly.io/reference/configuration#run-one-off-commands-before-releasing-a-deployment).
+
+For subsequent schema changes, generate and commit a migration before redeploying:
+
+```sh
+npm run cms:generate
+npm run migrate:create --workspace @point-media/cms -- describe_the_change
+```
+
+Commit the generated `.ts`, `.json` and migration `index.ts` together. Local development pushes schema changes automatically; do not copy a development SQLite database over a migrated production database. The Fly volume keeps database records and uploads across deploys/restarts; daily volume snapshots are retained for 14 days. A single Machine/volume does not provide database replication or high availability.
+
+For a local container check:
+
+```sh
+docker build -t point-media .
+docker run --rm -p 3000:3000 -v point-media-data:/data \
+  -e PAYLOAD_SECRET="$(openssl rand -hex 32)" point-media
+```
+
+The public directory is served by Next on Fly; GitHub Pages continues to host only the static demo. `npm run test:cms` includes a production-mode test that migrates an empty temporary database, uploads a logo, saves a publication, restarts Payload and verifies persistence.
+
+**Admin and API writes retain the existing open shared-editor access, including on Fly. Anyone with the deployed URL can edit/delete content.** The `PAYLOAD_SECRET` secures Payload internals; it does not add an editor login. The custom `open-editor` strategy is in `cms/collections/Editors.ts`, and CRUD rules are in `cms/collections/access.ts`.
 
 ## Phone demo
 

@@ -4,6 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { getPayload } from 'payload';
+import { findPublicationReader } from '../lib/publicationReader';
+import { toEditionContent } from '../lib/editionContent';
 
 test('open editorial workflow persists media, publications, editions, and article order', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'point-media-cms-'));
@@ -30,8 +32,17 @@ test('open editorial workflow persists media, publications, editions, and articl
     const publication = await payload.create({
       collection: 'publications',
       overrideAccess: false,
-      data: { name: 'Test Gazette', headline: 'A daily test edition', logo: image.id },
+      data: { name: 'Test Gazette', headline: 'A daily test edition', logo: image.id, brandColor: '#36B' },
     });
+    assert.equal(publication.slug, 'test-gazette');
+    assert.equal(publication.brandColor, '#3366bb');
+    await payload.update({ collection: 'publications', id: publication.id, data: { name: 'Renamed Gazette' } });
+    assert.equal((await payload.findByID({ collection: 'publications', id: publication.id })).slug, 'test-gazette', 'renaming keeps shared links stable');
+    const secondPublication = await payload.create({ collection: 'publications', data: { name: 'Test Gazette', headline: 'Another publication', logo: image.id } });
+    assert.equal(secondPublication.slug, 'test-gazette-2');
+    for (const data of [{ slug: 'test-gazette' }, { slug: 'admin' }, { brandColor: 'red' }]) {
+      await assert.rejects(payload.update({ collection: 'publications', id: secondPublication.id, data }));
+    }
     const body = {
       root: {
         type: 'root', version: 1, direction: null as null, format: '' as const, indent: 0,
@@ -68,6 +79,14 @@ test('open editorial workflow persists media, publications, editions, and articl
     assert.deepEqual(saved.articles?.[0].body, body, 'rich text formatting survives saving and reordering');
     assert.equal(typeof saved.articles?.[1].mainImage, 'object', 'uploaded main images are populated');
 
+    const future = await payload.create({ collection: 'editions', data: { publication: publication.id, startDate: '2099-01-01T00:00:00.000Z', endDate: '2099-01-02T00:00:00.000Z', articles: [] } });
+    const reader = await findPublicationReader(payload, 'test-gazette', new Date('2026-11-04T12:00:00.000Z'));
+    assert.equal(reader?.edition?.id, edition.id, 'public URLs show the latest started edition, excluding future editions');
+    assert.equal(toEditionContent(reader?.edition).publication.brandColor, '#3366bb');
+    assert.equal((await findPublicationReader(payload, 'test-gazette-2'))?.edition, null, 'publications never use another publication’s articles');
+    assert.equal(await findPublicationReader(payload, 'missing'), null);
+    await payload.delete({ collection: 'editions', id: future.id });
+
     const joined = await payload.findByID({ collection: 'publications', id: publication.id, overrideAccess: false });
     assert.equal(joined.editions?.docs?.length, 1);
     const joinedEdition = joined.editions!.docs![0];
@@ -95,6 +114,7 @@ test('open editorial workflow persists media, publications, editions, and articl
 
     await payload.delete({ collection: 'editions', id: edition.id, overrideAccess: false });
     await payload.delete({ collection: 'publications', id: publication.id, overrideAccess: false });
+    await payload.delete({ collection: 'publications', id: secondPublication.id });
     await payload.delete({ collection: 'media', id: image.id, overrideAccess: false });
   } finally {
     await payload.destroy();

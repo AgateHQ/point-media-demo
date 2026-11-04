@@ -57,12 +57,12 @@ export function ReaderPreview({ content, development, readerOrigin }: {
 
   return <>
     {status !== 'ready' && <section className="reader-preview-fallback" role="status">
-      <p>Edition preview</p>
+      <p>{content.mode === 'publication' ? content.publication.name : 'Edition preview'}</p>
       <h1>{status === 'error' ? 'The reader couldn’t load' : 'Opening your edition…'}</h1>
       {status === 'error' && <>
         <p>{development ? 'Make sure the reader and CMS development servers are running, then refresh.' : 'Refresh the page to try again.'}</p>
         <button onClick={() => window.location.reload()}>Try again</button>
-        <a href={`/admin/collections/editions/${content.id}`}>Back to the editor</a>
+        {content.mode !== 'publication' && <a href={`/admin/collections/editions/${content.id}`}>Back to the editor</a>}
       </>}
     </section>}
     <div ref={target} id="reader-preview-root" />

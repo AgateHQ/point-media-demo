@@ -12,6 +12,8 @@
     "check": "tsc --noEmit",
     "generate:importmap": "payload generate:importmap",
     "generate": "payload generate:types && npm run generate:importmap",
+    "migrate:create": "payload migrate:create",
+    "migrate": "payload migrate",
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {

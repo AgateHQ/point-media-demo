@@ -12,6 +12,8 @@ export default defineConfig({
       '/preview': { target: 'http://127.0.0.1:3000', changeOrigin: false },
       '/api': { target: 'http://127.0.0.1:3000', changeOrigin: false },
       '/_next': { target: 'http://127.0.0.1:3000', changeOrigin: false, ws: true },
+      // Public publication URLs are handled by Next; `/` remains the static demo.
+      '^/[a-z0-9]+(?:-[a-z0-9]+)*(?:[?].*)?$': { target: 'http://127.0.0.1:3000', changeOrigin: false },
     },
   },
 });
