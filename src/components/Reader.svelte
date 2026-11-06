@@ -135,7 +135,7 @@
       <div class="article-media">
         {#if story.videoUrl}<StoryVideo url={story.videoUrl} title={`Video: ${story.title}`} />{:else}
         <ResponsiveImage class={`article-image${videoId ? ' video-fallback' : ''}`} image={story.image as keyof typeof imageAssets}
-          alt={story.imageAlt || story.title.replace(/\n/g, ' ')} sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 760px) calc(100vw - 64px), 696px" priority="high" />
+          alt={story.imageAlt || story.title.replace(/\n/g, ' ')} sizes="(max-width: 430px) calc(100vw - 42px), 388px" priority="high" />
         {#if videoId}<BackgroundVideo id={videoId} title={`Background video for ${story.title.replace('\n', ' ')}`} />{/if}
         {/if}
       </div>

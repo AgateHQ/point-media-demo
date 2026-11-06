@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demo, currentPub, unlockedEditionCount, selectPublication, topup, reset, isIos, isSafari, notify, partnerMomentEnabled } from '../demo.svelte';
+  import { demo, currentPub, unlockedEditionCount, openStory, selectPublication, topup, reset, isIos, isSafari, notify, partnerMomentEnabled } from '../demo.svelte';
   import { publications, money } from '../data';
+  import type { DiscoverArticle } from '../discover';
   import { motionDelay, reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
   import PublicationLogo from './PublicationLogo.svelte';
@@ -15,7 +16,7 @@
   let slideToEdition = $state(false);
   let timer = 0;
   let unlockedCount = $derived(unlockedEditionCount());
-  let label = $derived(demo.sheet === 'discover' ? 'Discover publications' : demo.sheet === 'network' ? 'Choose a publication' : demo.sheet === 'collection' ? 'Your daily story collection' : demo.sheet === 'install' ? 'Install app instructions' : demo.sheet === 'wallet' ? 'Axate wallet' : 'Network title preview');
+  let label = $derived(demo.sheet === 'discover' ? 'Discover articles' : demo.sheet === 'network' ? 'Choose a publication' : demo.sheet === 'collection' ? 'Your daily story collection' : demo.sheet === 'install' ? 'Install app instructions' : demo.sheet === 'wallet' ? 'Axate wallet' : 'Network title preview');
 
   $effect(() => {
     if (demo.sheet === 'discover' && !Discover && !discoverLoading) {
@@ -56,14 +57,18 @@
     closing = true;
     timer = window.setTimeout(() => { demo.sheet = null; }, delay);
   }
-  function enter(id: string, motion: 'down' | 'up' = 'down') {
+  function enter(article: DiscoverArticle, motion: 'down' | 'up') {
     if (entering || closing) return;
+    if (article.href) {
+      demo.sheet = null;
+      window.location.assign(article.href);
+      return;
+    }
     const delay = motionDelay(motion === 'up' ? 620 : 320);
     entering = delay > 0;
     slideToEdition = delay > 0 && motion === 'up';
-    selectPublication(id, false);
-    if (!delay) { demo.sheet = null; return; }
-    timer = window.setTimeout(() => { demo.sheet = null; }, delay);
+    openStory(article.story.id, article.publication.id, !delay);
+    if (delay) timer = window.setTimeout(() => { demo.sheet = null; }, delay);
   }
   function events(node: HTMLDialogElement) {
     const click = (e: MouseEvent) => {

@@ -114,10 +114,19 @@ function restore(): State {
   return fresh();
 }
 
+const restored = restore();
+if (readerContext.edition?.mode === 'publication') {
+  const articleId = new URLSearchParams(window.location.search).get('article');
+  const index = readerContext.edition.articles.findIndex(article => article.id === articleId);
+  if (index >= 0) {
+    restored.position = editionNavigation(readerContext.edition.articles.length).storyPosition(index);
+    restored.screen = 'reader';
+  }
+}
+
 export const demo = $state({
-  data: restore(),
+  data: restored,
   sheet: null as SheetKind | null,
-  discoverIndex: 0,
   installPrompt: null as BeforeInstallPromptEvent | null,
   installed: false,
   completionSequence: 0,
@@ -134,7 +143,6 @@ export const demo = $state({
   toast: { message: '', amount: '', kind: '' as '' | 'spent' | 'received', visible: false, anchor: undefined as DOMRect | undefined },
   walletChange: { id: 0, amount: '', label: '', kind: '' as '' | 'spent' | 'received' },
 });
-demo.discoverIndex = Math.max(0, publications.findIndex(p => p.id === demo.data.publication));
 
 export function currentPub() { readerRuntime.revision; return publications.find(p => p.id === demo.data.publication)!; }
 export function getStories() { return currentPub().storyOrder.map(i => stories[i]); }
@@ -272,17 +280,20 @@ export function collect(id: string) {
   demo.data.collected[demo.data.publication].push(id);
   persist();
 }
-export function openStory(id: string) {
+export function openStory(id: string, publicationId = demo.data.publication, closeSheet = true) {
   settleEditionTurn();
-  const index = getStories().findIndex(story => story.id === id);
+  const publication = publications.find(item => item.id === publicationId);
+  if (!publication) return;
+  const index = publication.storyOrder.findIndex(storyIndex => stories[storyIndex].id === id);
   if (index < 0) return;
-  const position = editionNavigation(getStories().length).storyPosition(index);
+  const position = editionNavigation(publication.storyOrder.length).storyPosition(index);
   const direction = demo.data.screen === 'complete' || position < demo.data.position ? 'backward' : 'forward';
-  const animate = !demo.sheet && (demo.data.screen !== 'reader' || position !== demo.data.position);
+  const animate = !demo.sheet && (demo.data.screen !== 'reader' || position !== demo.data.position || publicationId !== demo.data.publication);
   return turnEdition(() => {
+    demo.data.publication = publicationId;
     demo.data.position = position;
     demo.data.screen = 'reader';
-    demo.sheet = null;
+    if (closeSheet) demo.sheet = null;
     mark();
   }, direction, animate);
 }
@@ -322,12 +333,7 @@ export function showWalletChange(amount: string, kind: 'spent' | 'received', lab
   }, 1600);
 }
 export function openSheet(kind: SheetKind) {
-  if (kind === 'discover' && readerContext.edition?.mode === 'publication') {
-    window.location.assign('/publications');
-    return;
-  }
   settleEditionTurn();
-  if (kind === 'discover') demo.discoverIndex = Math.max(0, publications.findIndex(p => p.id === demo.data.publication));
   demo.sheet = kind;
 }
 export function home() {
@@ -337,15 +343,13 @@ export function home() {
 export function start() {
   return turnEdition(() => { demo.data.paid = true; demo.data.screen = 'reader'; mark(); }, 'forward', false);
 }
-export function selectPublication(id: string, close = true) {
+export function selectPublication(id: string) {
   if (!publications.some(p => p.id === id)) return;
-  // Publication discovery already has its own sheet transition.
   return turnEdition(() => {
     demo.data.publication = id;
-    demo.discoverIndex = publications.findIndex(p => p.id === id);
     demo.data.position = 0;
     demo.data.screen = 'reader';
-    if (close) demo.sheet = null;
+    demo.sheet = null;
     mark();
   }, 'forward', false);
 }
@@ -432,7 +436,6 @@ export function reset() {
   turnEdition(() => {
     demo.sheet = null;
     demo.data = fresh();
-    demo.discoverIndex = 0;
     mark();
   }, 'forward', false);
   notify('Fresh edition. Balance reset to £1.00.');

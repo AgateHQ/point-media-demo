@@ -32,6 +32,13 @@ export interface EditionContent {
   }[];
 }
 
+export interface PublicDiscoverArticle {
+  id: string;
+  title: string;
+  imageUrl?: string;
+  publication: { slug: string; name: string; brandColor?: string; logoUrl?: string };
+}
+
 // Keep the article being read when rows move, and follow a newly edited article.
 export function articleToPreview(previous: EditionContent, next: EditionContent, currentId?: string) {
   const previousById = new Map(previous.articles.map(article => [article.id, article]));

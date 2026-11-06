@@ -90,14 +90,13 @@
   .edition-journey {
     --journey-quiet: color-mix(in srgb, var(--edition-ink) 64%, var(--edition-bg));
     position: sticky;
-    top: var(--article-header-height, 72px);
+    top: 72px;
     z-index: 15;
     flex: 0 0 auto;
     width: 100%;
-    max-width: 760px;
     container: edition-journey / inline-size;
     margin: 0 auto;
-    padding: 20px 30px 18px;
+    padding: 16px 20px 14px;
     color: var(--edition-ink);
     background: var(--edition-bg);
     border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 22%, transparent);
@@ -109,12 +108,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 15px;
+    margin-bottom: 13px;
   }
 
   .journey-title { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .journey-eyebrow { color: var(--publication-brand); font-size: .8125rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-  .journey-caption { color: var(--journey-quiet); font-size: .8125rem; line-height: 1.4; }
+  .journey-caption { color: var(--journey-quiet); font-size: .75rem; line-height: 1.4; }
   .journey-count { display: flex; align-items: baseline; gap: 7px; flex-shrink: 0; font-family: 'Manrope', sans-serif; }
   .journey-number { font-size: 2.25rem; font-weight: 800; line-height: 1; letter-spacing: -.08em; font-variant-numeric: tabular-nums; }
   .journey-denominator { color: var(--journey-quiet); font-size: .875rem; white-space: nowrap; }
@@ -179,21 +178,6 @@
   .journey-finish .journey-caption { color: var(--publication-brand); font-weight: 700; }
   .journey-finish .journey-bonus-marker { border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--publication-brand) 8%, transparent); }
   .journey-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-
-  @media (min-width: 601px) {
-    :global(.article-layout) .edition-journey { padding: 22px 32px 20px; }
-    :global(.article-layout) .journey-heading { margin-bottom: 17px; }
-    :global(.article-layout) .journey-number { font-size: 2.75rem; }
-    :global(.article-layout) .journey-step-track { height: 4px; }
-    :global(.article-layout) .journey-stories { gap: 8px; }
-    :global(.article-layout) .journey-bonus { flex-basis: 6.5rem; padding-left: 20px; }
-  }
-
-  @media (max-width: 600px) {
-    .edition-journey { padding: 16px 20px 14px; }
-    .journey-heading { margin-bottom: 13px; }
-    .journey-caption { font-size: .75rem; }
-  }
 
   @media (max-width: 360px) {
     .edition-journey { padding-left: 16px; padding-right: 16px; }

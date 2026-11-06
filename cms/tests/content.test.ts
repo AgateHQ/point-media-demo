@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { getPayload } from 'payload';
-import { findPublicationReader } from '../lib/publicationReader';
+import { findPublicationReader, findPublicDiscoverArticles } from '../lib/publicationReader';
 import { toEditionContent } from '../lib/editionContent';
 
 test('open editorial workflow persists media, publications, editions, and article order', async () => {
@@ -85,6 +85,22 @@ test('open editorial workflow persists media, publications, editions, and articl
     assert.equal(toEditionContent(reader?.edition).publication.brandColor, '#3366bb');
     assert.equal((await findPublicationReader(payload, 'test-gazette-2'))?.edition, null, 'publications never use another publication’s articles');
     assert.equal(await findPublicationReader(payload, 'missing'), null);
+
+    const createDiscoverEdition = (publicationId: number, startDate: string, endDate: string, title: string) => payload.create({
+      collection: 'editions',
+      data: { publication: publicationId, startDate, endDate, articles: [{ title, body, mediaType: 'image', mainImage: image.id }] },
+    });
+    const older = await createDiscoverEdition(publication.id, '2026-10-01', '2026-10-02', 'Older story');
+    const other = await createDiscoverEdition(secondPublication.id, '2026-11-01', '2026-11-02', 'Another publication’s story');
+    const discover = await findPublicDiscoverArticles(payload, new Date('2026-11-04T12:00:00.000Z'));
+    assert.deepEqual(discover.map(article => [article.publication.slug, article.title]).sort(), [
+      ['test-gazette', 'Image story'], ['test-gazette', 'Video story'], ['test-gazette-2', 'Another publication’s story'],
+    ]);
+    const imageCard = discover.find(article => article.title === 'Image story');
+    assert.equal(imageCard?.id, saved.articles?.[1].id);
+    assert.equal(imageCard?.imageUrl, image.url);
+    await payload.delete({ collection: 'editions', id: older.id });
+    await payload.delete({ collection: 'editions', id: other.id });
     await payload.delete({ collection: 'editions', id: future.id });
 
     const joined = await payload.findByID({ collection: 'publications', id: publication.id, overrideAccess: false });

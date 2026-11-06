@@ -58,11 +58,11 @@
     border-radius: 3px;
     box-shadow: 5px 5px 0 color-mix(in srgb, var(--publication-brand) 7%, transparent);
   }
-  .card-edition-line { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 24px; border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 17%, transparent); }
+  .card-edition-line { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 18px; border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 17%, transparent); }
   .card-series { color: var(--publication-brand); font-family: 'DM Sans', sans-serif; font-size: .75rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
   .card-serial { flex-shrink: 0; font-family: 'Manrope', sans-serif; color: color-mix(in srgb, var(--edition-ink) 58%, var(--edition-bg)); font-size: .75rem; white-space: nowrap; }
   .card-serial strong { color: var(--edition-ink); font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
-  .card-status-line { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; padding: 13px 24px; border-top: 1px solid color-mix(in srgb, var(--publication-brand) 17%, transparent); font-family: 'DM Sans', sans-serif; font-size: .75rem; line-height: 1.4; }
+  .card-status-line { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; padding: 12px 18px; border-top: 1px solid color-mix(in srgb, var(--publication-brand) 17%, transparent); font-family: 'DM Sans', sans-serif; font-size: .75rem; line-height: 1.4; }
   .card-section { color: color-mix(in srgb, var(--edition-ink) 62%, var(--edition-bg)); }
   .card-state { display: inline-flex; align-items: center; gap: 5px; color: var(--publication-brand); font-weight: 700; }
   .card-state svg { width: 16px; height: 16px; }
@@ -85,10 +85,6 @@
   .card-compact .card-status-line { padding: 10px 14px; font-size: .6875rem; gap: 4px 8px; }
   .card-compact .card-state svg { width: 13px; height: 13px; }
 
-  @media (max-width: 600px) {
-    .card-edition-line { padding: 12px 18px; }
-    .card-status-line { padding: 12px 18px; }
-  }
   @media (max-width: 360px) {
     .card-compact .card-edition-line { flex-wrap: wrap; }
     .card-compact .card-series { font-size: .625rem; }

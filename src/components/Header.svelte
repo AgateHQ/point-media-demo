@@ -16,7 +16,6 @@
       <Icon name="discover" /><span>Discover</span>
     </button>
   </div>
-  <span class="header-tagline">{pub.subtitle}</span>
   <button class="wallet-button" class:wallet-spent={demo.walletChange.kind === 'spent'} class:wallet-received={demo.walletChange.kind === 'received'}
     onclick={() => openSheet('wallet')} aria-label={`Open wallet. Balance ${money(demo.data.balance)}`}>
     <Icon name="wallet" />

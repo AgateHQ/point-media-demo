@@ -5,7 +5,7 @@
 .editor-preview-toolbar button, .editor-preview-toolbar a { color: white; background: transparent; font: 600 .75rem/1.5 'DM Sans', sans-serif; padding: .4rem 0; }
 .editor-preview-toolbar a { text-underline-offset: 3px; }
 .publication-shell.cms-publication .wallet-button, .publication-shell.cms-publication .discover-button { color: var(--shell-ink); border-color: color-mix(in srgb, var(--shell-ink) 25%, transparent); background: color-mix(in srgb, var(--shell-ink) 5%, var(--shell-header)); }
-.publication-shell.cms-publication .wallet-button .axate-mark, .publication-shell.cms-publication .discover-button svg, .publication-shell.cms-publication .header-tagline { color: var(--shell-ink); }
+.publication-shell.cms-publication .wallet-button .axate-mark, .publication-shell.cms-publication .discover-button svg { color: var(--shell-ink); }
 .publication-shell.cms-publication .header-wordmark { object-fit: contain; object-position: left center; }
 .publication-logo-fallback { display: flex; align-items: center; color: inherit; font: 800 1rem/1.1 'Manrope', sans-serif; overflow: hidden; }
 .media-placeholder { display: grid; place-items: center; width: 100%; height: 100%; min-height: 100px; background: color-mix(in srgb, var(--publication-brand) 14%, var(--edition-bg)); color: var(--publication-brand); }
@@ -21,8 +21,8 @@
 .article-rich-text .rich-sub { vertical-align: sub; font-size: .8em; }
 .article-rich-text .rich-sup { vertical-align: super; font-size: .8em; }
 .article-rich-text { overflow-wrap: anywhere; color: var(--edition-ink); }
-.article-rich-text h1, .article-rich-text h2, .article-rich-text h3, .article-rich-text h4, .article-rich-text h5, .article-rich-text h6 { color: var(--edition-ink); font-family: var(--article-title-font); font-size: clamp(24px, 4vw, 32px); line-height: 1.2; margin: 1.5em 0 .65em; letter-spacing: -.025em; }
-.article-rich-text blockquote { color: var(--edition-ink); font-family: var(--article-title-font); font-size: clamp(24px, 3.4vw, 34px); font-weight: 700; line-height: 1.25; }
+.article-rich-text h1, .article-rich-text h2, .article-rich-text h3, .article-rich-text h4, .article-rich-text h5, .article-rich-text h6 { color: var(--edition-ink); font-family: var(--article-title-font); font-size: 24px; line-height: 1.2; margin: 1.5em 0 .65em; letter-spacing: -.025em; }
+.article-rich-text blockquote { color: var(--edition-ink); font-family: var(--article-title-font); font-size: 24px; font-weight: 700; line-height: 1.25; }
 .article-rich-text .rich-list { color: var(--edition-ink); font-family: var(--article-body-font); font-size: 17px; line-height: 1.75; padding-left: 1.5rem; margin: 0 0 22px; }
 .article-rich-text li + li { margin-top: .5em; }
 .article-rich-text a { color: var(--publication-brand); text-decoration: underline; text-underline-offset: .2em; }
