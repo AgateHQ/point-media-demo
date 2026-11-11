@@ -10,8 +10,6 @@
 .publication-logo-fallback { display: flex; align-items: center; color: inherit; font: 800 1rem/1.1 'Manrope', sans-serif; overflow: hidden; }
 .media-placeholder { display: grid; place-items: center; width: 100%; height: 100%; min-height: 100px; background: color-mix(in srgb, var(--publication-brand) 14%, var(--edition-bg)); color: var(--publication-brand); }
 .media-placeholder > span { font-size: 2rem; }
-.cms-story-video { display: block; width: 100%; height: 100%; border: 0; background: #111; }
-.cms-video-link { display: grid; width: 100%; height: 100%; place-items: center; color: var(--publication-brand); font: 700 1rem 'DM Sans', sans-serif; }
 .article-rich-text .rich-bold { font-weight: 700; }
 .article-rich-text .rich-italic { font-style: italic; }
 .article-rich-text .rich-strike { text-decoration: line-through; }

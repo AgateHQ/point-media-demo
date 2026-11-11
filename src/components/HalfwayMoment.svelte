@@ -119,7 +119,7 @@
   .halfway-copy p { grid-area: copy; min-width: 0; margin: 0; color: color-mix(in srgb, var(--edition-ink) 74%, var(--edition-bg)); font-family: 'DM Sans', sans-serif; font-size: .875rem; line-height: 1.65; }
   .halfway-first-half { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 0 0 22px; border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 20%, transparent); }
   .halfway-first-half>span, .halfway-next-label { color: var(--publication-brand); font-family: 'DM Sans', sans-serif; font-size: .6875rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-  .halfway-stamps { display: flex; gap: 7px; }
+  .halfway-stamps { display: flex; flex-wrap: wrap; gap: 7px; max-width: 100%; }
   .halfway-stamp { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 42px; height: 30px; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--publication-brand) 23%, transparent); border-top-width: 3px; border-radius: 2px; color: color-mix(in srgb, var(--edition-ink) 54%, var(--edition-bg)); font-family: 'Manrope', sans-serif; font-size: .625rem; font-weight: 800; font-variant-numeric: tabular-nums; transition: color var(--motion-duration-quick) var(--motion-ease-standard), background var(--motion-duration-quick) var(--motion-ease-standard); }
   .halfway-stamp svg { width: 13px; height: 13px; }
   .stamp-earned { color: #fff; background: var(--publication-brand); border-color: var(--publication-brand); }

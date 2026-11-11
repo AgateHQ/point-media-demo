@@ -13,3 +13,8 @@
 {:else if video}
   <a class="cms-video-link" href={video.url} target="_blank" rel="noopener noreferrer">Watch video ↗</a>
 {/if}
+
+<style>
+  .cms-story-video { display: block; width: 100%; height: 100%; border: 0; background: #111; }
+  .cms-video-link { display: grid; width: 100%; height: 100%; place-items: center; color: var(--publication-brand); font: 700 1rem 'DM Sans', sans-serif; }
+</style>

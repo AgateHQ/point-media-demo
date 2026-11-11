@@ -2,16 +2,20 @@
   import { onMount } from 'svelte';
   import { readerContext, storyVideos } from '../data';
   import { demo } from '../demo.svelte';
-  import { fetchDiscoverArticles, localDiscoverArticles, shuffleDiscoverArticles, type DiscoverArticle } from '../discover';
+  import { discoverPublications, fetchDiscoverArticles, localDiscoverArticles, shuffleDiscoverArticles, type DiscoverArticle, type DiscoverPublication } from '../discover';
   import { motionDelay, prefersReducedMotion, reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
   import ResponsiveImage from './ResponsiveImage.svelte';
   import BackgroundVideo from './BackgroundVideo.svelte';
   import PublicationLogo from './PublicationLogo.svelte';
+  import PublicationBookshelf from './PublicationBookshelf.svelte';
   let { onclose, onenter }: { onclose: () => void; onenter: (article: DiscoverArticle, motion: 'down' | 'up') => void } = $props();
   const localArticles = localDiscoverArticles();
   const publicReader = readerContext.edition?.mode === 'publication';
   let articles = $state.raw(publicReader ? [] : shuffleDiscoverArticles(localArticles));
+  let networkArticles = $state.raw<DiscoverArticle[]>([]);
+  let editions = $derived(discoverPublications(networkArticles));
+  let showingBookshelf = $state(false);
   let catalogUnavailable = $state(false);
   let index = $state(0);
   let active = $derived(articles[index]);
@@ -26,8 +30,10 @@
   onMount(() => {
     if (!publicReader) return;
     const controller = new AbortController();
-    fetchDiscoverArticles(controller.signal).then(networkArticles => {
-      if (!controller.signal.aborted) articles = shuffleDiscoverArticles([...localArticles, ...networkArticles]);
+    fetchDiscoverArticles(controller.signal).then(loadedArticles => {
+      if (controller.signal.aborted) return;
+      networkArticles = loadedArticles;
+      articles = shuffleDiscoverArticles([...localArticles, ...loadedArticles]);
     }).catch(() => {
       if (controller.signal.aborted) return;
       catalogUnavailable = true;
@@ -71,6 +77,17 @@
     resetDrag();
     outgoing = motion === 'down' && !prefersReducedMotion() ? 'enter-article' : 'opening';
     onenter(active, motion);
+  }
+  function toggleBookshelf() {
+    if (outgoing) return;
+    resetDrag();
+    showingBookshelf = !showingBookshelf;
+  }
+  function enterPublication(edition: DiscoverPublication) {
+    if (outgoing) return;
+    resetDrag();
+    outgoing = 'opening';
+    onenter({ story: edition.lead, publication: edition.publication, href: edition.href }, 'up');
   }
   function gestures(node: HTMLElement) {
     let origin: { x: number; y: number; id: number; time: number } | null = null;
@@ -144,7 +161,7 @@
     } };
   }
   function keydown(e: KeyboardEvent) {
-    if (demo.sheet !== 'discover' || !active || e.defaultPrevented || e.target instanceof HTMLSelectElement) return;
+    if (demo.sheet !== 'discover' || showingBookshelf || !active || e.defaultPrevented || e.target instanceof HTMLSelectElement) return;
     if (e.key === 'ArrowRight') { e.preventDefault(); move(1); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1); }
     if (e.key === 'ArrowDown') { e.preventDefault(); enter(); }
@@ -153,14 +170,22 @@
 </script>
 
 <svelte:window onkeydown={keydown} />
-<div class="discover-chrome">
-  {#if active}
-    <span>{catalogUnavailable ? 'THIS EDITION ONLY' : 'DISCOVER'} <b>{index + 1} / {articles.length}</b></span>
+<div class="discover-chrome" class:bookshelf-chrome={showingBookshelf}>
+  {#if showingBookshelf || active}
+    <span>{catalogUnavailable ? 'THIS EDITION ONLY' : 'DISCOVER'}</span>
   {:else}
     <span role="status">{publicReader ? 'Loading articles…' : 'No articles available'}</span>
   {/if}
-  <button class="close" onclick={onclose} aria-label="Close discover">×</button>
+  <div class="discover-chrome-actions">
+    <button class="discover-bookshelf-button" onclick={toggleBookshelf} disabled={!!outgoing} aria-label={showingBookshelf ? 'Back to articles' : 'Browse publication bookshelf'}>
+      {#if showingBookshelf}<span class="bookshelf-back-icon"><Icon /></span><span>Articles</span>{:else}<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3 4h4v11H3zM8 3h4v12H8zM13 5l3-1 3 10-3 1zM2 17h17" /></svg><span>Bookshelf</span>{/if}
+    </button>
+    <button class="close" onclick={onclose} aria-label="Close discover">×</button>
+  </div>
 </div>
+{#if showingBookshelf}
+  <PublicationBookshelf {editions} disabled={!!outgoing} onselect={enterPublication} />
+{:else}
 <div class="discover-deck" aria-live="polite" use:gestures>
   {#each articles as { story, publication: p, href }, i (href || story.id)}
     {@const rel = relative(i)}
@@ -199,3 +224,15 @@
     <button onclick={() => move(1)} aria-label="Next article"><Icon /></button>
   </div>
 {/if}
+{/if}
+
+<style>
+  .discover-chrome-actions { display: flex; align-items: center; gap: 10px; }
+  .discover-bookshelf-button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 9px 12px; border: 1px solid #ffffff55; border-radius: 999px; background: #050605d9; color: #fff; backdrop-filter: blur(16px); pointer-events: auto; font: 700 .6875rem/1.1 'DM Sans', sans-serif; }
+  .discover-bookshelf-button > svg, .bookshelf-back-icon :global(svg) { width: 16px; height: 16px; }
+  .bookshelf-back-icon { display: flex; transform: rotate(180deg); }
+  .bookshelf-chrome > span { padding: 0; border: 0; background: transparent; backdrop-filter: none; color: #666; font-size: 9px; letter-spacing: 2px; }
+  .bookshelf-chrome .discover-bookshelf-button { border-color: #0000001a; background: transparent; color: #555; backdrop-filter: none; }
+  .bookshelf-chrome .close { border-color: transparent; background: transparent; color: #555; backdrop-filter: none; }
+  @media (max-width: 360px) { .discover-chrome-actions { gap: 7px; } .discover-bookshelf-button { padding: 9px 10px; } }
+</style>

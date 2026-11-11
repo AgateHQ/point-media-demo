@@ -2,6 +2,7 @@ import { publications, stories, legacyPublicationIds, storySections, readerConte
 import { editionNavigation } from './editionContent';
 import { settleEditionTurn, turnEdition } from './editionNavigation';
 import { readerRuntime } from './readerRuntime.svelte';
+import { resetNewsletters } from './newsletter.svelte';
 
 export interface State {
   paid: boolean;
@@ -82,6 +83,11 @@ function restore(): State {
         ? [...new Set(s.completed.filter((id: unknown) => typeof id === 'string' && publications.some(p => p.id === id)))]
         : publications.filter(publication => publication.storyOrder
           .every(index => s.visited[publication.id]?.includes(stories[index].id))).map(publication => publication.id);
+    }
+    // A shorter edition should resume on its last page without resetting the wallet or history.
+    const savedPublication = publications.find(publication => publication.id === s?.publication);
+    if (savedPublication && Number.isInteger(s.position) && s.position >= 0) {
+      s.position = Math.min(s.position, editionNavigation(savedPublication.storyOrder.length).last);
     }
     if (s && typeof s.paid === 'boolean' && typeof s.reward === 'boolean'
       && Number.isFinite(s.balance) && Number.isInteger(s.position) && s.position >= 0
@@ -436,6 +442,7 @@ export function reset() {
   turnEdition(() => {
     demo.sheet = null;
     demo.data = fresh();
+    resetNewsletters();
     mark();
   }, 'forward', false);
   notify('Fresh edition. Balance reset to £1.00.');

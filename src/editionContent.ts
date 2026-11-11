@@ -53,8 +53,8 @@ export function richTextText(node: RichTextNode): string {
 }
 
 // Keep the editor's structure and formatting when showing the paid preview.
-export function richTextPreview(document: RichTextDocument): RichTextDocument {
-  let remaining = Math.max(1, Math.floor(richTextText(document.root).replace(/\n/g, '').length * .4));
+export function richTextPreview(document: RichTextDocument, ratio = .4): RichTextDocument {
+  let remaining = Math.max(1, Math.floor(richTextText(document.root).replace(/\n/g, '').length * ratio));
   function trim(node: RichTextNode): RichTextNode | null {
     if (remaining <= 0) return null;
     if (node.type === 'text') {

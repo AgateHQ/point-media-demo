@@ -8,6 +8,33 @@ export interface DiscoverArticle {
   href?: string;
 }
 
+export interface DiscoverPublication {
+  publication: Publication;
+  lead: DiscoverArticle['story'];
+  articleCount: number;
+  href?: string;
+}
+
+export function discoverPublications(networkArticles: DiscoverArticle[] = []): DiscoverPublication[] {
+  const editions = new Map<string, DiscoverPublication>();
+  for (const publication of publications) {
+    const lead = stories[publication.storyOrder[0]];
+    if (lead) editions.set(publication.id, { publication, lead, articleCount: publication.storyOrder.length });
+  }
+  for (const article of networkArticles) {
+    if (!article.href) continue;
+    const existing = editions.get(article.publication.id);
+    if (existing) {
+      if (existing.href) existing.articleCount += 1;
+    } else {
+      editions.set(article.publication.id, {
+        publication: article.publication, lead: article.story, articleCount: 1, href: article.href.split('?')[0],
+      });
+    }
+  }
+  return [...editions.values()];
+}
+
 export function localDiscoverArticles() {
   const articles = new Map<string, DiscoverArticle>();
   for (const publication of publications) {

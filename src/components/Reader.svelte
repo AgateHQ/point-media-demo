@@ -15,6 +15,7 @@
   import FinalArticleMoment from './FinalArticleMoment.svelte';
   import ArticleRichText from './ArticleRichText.svelte';
   import StoryVideo from './StoryVideo.svelte';
+  import NewsletterSignup from './NewsletterSignup.svelte';
 
   let pub = $derived(currentPub());
   let index = $derived(storyIndex());
@@ -29,7 +30,8 @@
   const rewardOnArrival = untrack(() => demo.data.reward);
   let pauseForHalfway = $derived(!ad && index === halfway.target - 1 && halfway.reached && !halfwayOnArrival);
   let videoId = $derived(!ad ? storyVideos[`${pub.id}:${story.id}`] : '');
-  let parts = $derived((expanded ? story.expandedBody : articlePreview(story)).split('\n\n'));
+  let parts = $derived((expanded ? story.expandedBody : articlePreview(story, pub.previewRatio)).split('\n\n'));
+  let newsletterPosition = $derived(Math.ceil((parts.length + 1) / 2));
   let section = $derived(storySections[story.id] || 'News');
   let date = $derived(story.richText ? story.date : story.date || '2026-09-16');
   let dateLabel = $derived(date && Number.isFinite(Date.parse(date))
@@ -139,18 +141,22 @@
         {#if videoId}<BackgroundVideo id={videoId} title={`Background video for ${story.title.replace('\n', ' ')}`} />{/if}
         {/if}
       </div>
-      <figcaption><span>{section} · {pub.name}</span><span>{story.richText ? story.imageAlt || (story.videoUrl ? 'Video' : '') : 'Photo: Alexander London'}</span></figcaption>
+      <figcaption><span>{section} · {pub.name}</span><span>{story.videoUrl ? 'Video' : story.richText ? story.imageAlt || '' : 'Photo: Alexander London'}</span></figcaption>
     </figure>
     </EditionCard>
     <div class="article-copy">
       {#if story.richText}
-        <ArticleRichText document={expanded ? story.richText : richTextPreview(story.richText)} />
+        <ArticleRichText document={expanded ? story.richText : richTextPreview(story.richText, pub.previewRatio)}>
+          {#snippet midpoint()}<NewsletterSignup publication={pub} />{/snippet}
+        </ArticleRichText>
       {:else}
       <p class="article-lede">{story.body}</p>
+      {#if newsletterPosition === 1}<NewsletterSignup publication={pub} />{/if}
       {#each parts as paragraph, i (i)}
         <p class="body-copy">{paragraph}</p>
         {#if i === 0}<aside class="article-pullquote" aria-label="The takeaway"><p>{story.takeaway}</p></aside>{/if}
         {#if i === 1 && parts.length > 2}<div class="ad-block article-ad"><span>Advertisement</span></div>{/if}
+        {#if i + 2 === newsletterPosition}<NewsletterSignup publication={pub} />{/if}
       {/each}
       {/if}
     </div>

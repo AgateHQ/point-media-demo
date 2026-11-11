@@ -40,7 +40,7 @@
     </div>
   </div>
 
-  <ol class="final-cards" aria-label={`${collectedCount} of ${total} story cards collected`}>
+  <ol class="final-cards" style:--final-columns={total > 8 ? Math.ceil(total / 2) : total} aria-label={`${collectedCount} of ${total} story cards collected`}>
     {#each stories as story, i (story.id)}
       <li class:card-earned={collectedIds.includes(story.id)} class:card-last={i === total - 1}
         aria-label={`Story ${i + 1}: ${collectedIds.includes(story.id) ? 'collected' : 'not collected'}`}>
@@ -106,7 +106,7 @@
   .final-kicker { display: block; margin-bottom: 9px; color: var(--publication-brand); font-size: .6875rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
   .final-copy h2 { margin: 0; color: var(--edition-ink); font-family: var(--article-title-font, 'Manrope', sans-serif); font-size: clamp(2.15rem, 6cqi, 3.25rem); font-weight: 800; line-height: 1.02; letter-spacing: -.04em; text-wrap: balance; }
   .final-copy p { margin: 13px 0 0; color: color-mix(in srgb, var(--edition-ink) 73%, var(--edition-bg)); font-family: 'DM Sans', sans-serif; font-size: .875rem; line-height: 1.65; }
-  .final-cards { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 7px; margin: 0; padding: 20px 0; border-top: 1px solid color-mix(in srgb, var(--publication-brand) 18%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 18%, transparent); list-style: none; }
+  .final-cards { display: grid; grid-template-columns: repeat(var(--final-columns), minmax(0, 1fr)); gap: 7px; margin: 0; padding: 20px 0; border-top: 1px solid color-mix(in srgb, var(--publication-brand) 18%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--publication-brand) 18%, transparent); list-style: none; }
   .final-cards li { position: relative; display: grid; place-items: center; min-width: 0; height: 38px; border: 1px solid color-mix(in srgb, var(--publication-brand) 24%, transparent); border-top: 3px solid color-mix(in srgb, var(--publication-brand) 45%, transparent); border-radius: 2px; color: color-mix(in srgb, var(--edition-ink) 52%, var(--edition-bg)); font-family: 'Manrope', sans-serif; font-size: .625rem; font-weight: 800; font-variant-numeric: tabular-nums; transition: color var(--motion-duration-standard) var(--motion-ease-standard), background var(--motion-duration-standard) var(--motion-ease-standard), border-color var(--motion-duration-standard) var(--motion-ease-standard); }
   .final-cards svg { position: absolute; width: 15px; height: 15px; opacity: 0; transform: scale(.75); }
   .final-cards .card-earned { color: #fff; background: var(--publication-brand); border-color: var(--publication-brand); }

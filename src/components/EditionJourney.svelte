@@ -48,7 +48,7 @@
   onDestroy(() => window.clearTimeout(earnedTimer));
 </script>
 
-<section class="edition-journey" class:journey-complete={complete} class:journey-partner={partner} class:journey-finish={atFinish} aria-label="Edition journey">
+<section class="edition-journey" class:journey-complete={complete} class:journey-partner={partner} class:journey-finish={atFinish} class:journey-long={stories.length > 8} aria-label="Edition journey">
   <div class="journey-heading">
     <div class="journey-title">
       <span class="journey-eyebrow">Today’s journey</span>
@@ -177,6 +177,9 @@
   .journey-complete .journey-bonus-label { color: var(--publication-brand); font-weight: 700; }
   .journey-finish .journey-caption { color: var(--publication-brand); font-weight: 700; }
   .journey-finish .journey-bonus-marker { border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--publication-brand) 8%, transparent); }
+  .journey-long .journey-map { flex-wrap: wrap; gap: 12px; }
+  .journey-long .journey-stories { flex-basis: 100%; }
+  .journey-long .journey-bonus { flex: 1; flex-direction: row; justify-content: flex-end; gap: 8px; border-left: 0; padding-left: 0; }
   .journey-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
   @media (max-width: 360px) {

@@ -10,6 +10,7 @@ export interface Publication {
   name: string;
   subtitle: string;
   storyOrder: number[];
+  previewRatio?: number;
   color: string;
   accent: string;
   brand: string;
@@ -22,19 +23,27 @@ export interface Publication {
   headerInk?: string;
 }
 export const publications:Publication[] = [
-  {id:'the-scoop',name:'The Scoop',subtitle:"BRITAIN'S CHEEKIEST READ",storyOrder:[0,1,2,3,4,5,6,7],color:'#FFFBEB',accent:'#DC2626',brand:'#DC2626',ink:'#111111',brandInk:'#ffffff',header:'#DC2626',canvas:'#f4dedb'},
-  {id:'brightwire',name:'Brightwire',subtitle:'GADGETS, APPS & THE TECH YOU LIVE WITH',storyOrder:[1,4,6,3,0,7,5,2],color:'#fffaf5',accent:'#C2410C',brand:'#C2410C',ink:'#141414',brandInk:'#ffffff',header:'#141414',canvas:'#f2e5da'},
-  {id:'full-time',name:'Full Time',subtitle:'EVERY GAME. EVERY RESULT.',storyOrder:[2,0,5,3,7,1,4,6],color:'#F0F7F8',accent:'#FACC15',brand:'#0E7490',ink:'#0B1F26',brandInk:'#0B1F26',header:'#0E7490',canvas:'#dcecef'},
-  {id:'evening-lantern',name:'The Evening Lantern',subtitle:"LIGHT ON THE DAY'S NEWS",storyOrder:[3,5,0,7,2,6,1,4],color:'#f7f7ee',accent:'#1E4D2B',brand:'#1E4D2B',ink:'#1E4D2B',brandInk:'#ffffff',header:'#1E4D2B',canvas:'#e1e8db'},
-  {id:'northgate-ledger',name:'The Northgate Ledger',subtitle:'RELIABLE REPORTING, EVERY EDITION',storyOrder:[5,0,3,7,2,6,1,4],color:'#f8f9fc',accent:'#14284B',brand:'#14284B',ink:'#14284B',brandInk:'#ffffff',header:'#14284B',canvas:'#e1e6ef'},
-  {id:'pitchline',name:'Pitchline',subtitle:'MEDIA · MARKETING · ADTECH',storyOrder:[4,1,0,5,6,3,7,2],color:'#f8f5ff',accent:'#5B21B6',brand:'#5B21B6',ink:'#15132B',brandInk:'#ffffff',header:'#15132B',canvas:'#e7e0f3'},
+  {id:'the-scoop',name:'The Scoop',subtitle:"BRITAIN'S CHEEKIEST READ",storyOrder:[0,1,2,8,9,10,11,7],previewRatio:.4,color:'#FFFBEB',accent:'#DC2626',brand:'#DC2626',ink:'#111111',brandInk:'#ffffff',header:'#DC2626',canvas:'#f4dedb'},
+  {id:'brightwire',name:'Brightwire',subtitle:'GADGETS, APPS & THE TECH YOU LIVE WITH',storyOrder:[1,12,13,14,15,4],previewRatio:.2,color:'#fffaf5',accent:'#C2410C',brand:'#C2410C',ink:'#141414',brandInk:'#ffffff',header:'#141414',canvas:'#f2e5da'},
+  {id:'full-time',name:'Full Time',subtitle:'EVERY GAME. EVERY RESULT.',storyOrder:[2,0,5,16,17,18,19,3,7,6],previewRatio:.3,color:'#F0F7F8',accent:'#FACC15',brand:'#0E7490',ink:'#0B1F26',brandInk:'#0B1F26',header:'#0E7490',canvas:'#dcecef'},
+  {id:'evening-lantern',name:'The Evening Lantern',subtitle:"LIGHT ON THE DAY'S NEWS",storyOrder:[3,20,21,22,23,0,4],previewRatio:.5,color:'#f7f7ee',accent:'#1E4D2B',brand:'#1E4D2B',ink:'#1E4D2B',brandInk:'#ffffff',header:'#1E4D2B',canvas:'#e1e8db'},
+  {id:'northgate-ledger',name:'The Northgate Ledger',subtitle:'RELIABLE REPORTING, EVERY EDITION',storyOrder:[5,0,3,24,25,26,27,1,2,6,7,4],previewRatio:.6,color:'#f8f9fc',accent:'#14284B',brand:'#14284B',ink:'#14284B',brandInk:'#ffffff',header:'#14284B',canvas:'#e1e6ef'},
+  {id:'pitchline',name:'Pitchline',subtitle:'MEDIA · MARKETING · ADTECH',storyOrder:[4,28,29,30,31],previewRatio:.25,color:'#f8f5ff',accent:'#5B21B6',brand:'#5B21B6',ink:'#15132B',brandInk:'#ffffff',header:'#15132B',canvas:'#e7e0f3'},
 ];
 export const legacyPublicationIds:Record<string,string> = {'the-point':'the-scoop',afterhours:'brightwire',touchline:'full-time',pulse:'evening-lantern'};
 export function publicationLogo(pub:Publication,variant:'colour'|'white'|'icon'='colour'){return pub.logoUrl || `${readerContext.assetBase || import.meta.env.BASE_URL}newspaper-logos/${pub.id}/${pub.id}_${variant==='icon'?'icon':`logo_${variant}`}.svg`;}
 export function nextPublicationId(id:string){const index=publications.findIndex(p=>p.id===id);return publications[(index+1)%publications.length].id;}
 
-export function articlePreview(story:Story){const full=story.expandedBody;const target=Math.floor(full.length*.4);const sentenceEnd=full.lastIndexOf('. ',target);const cut=sentenceEnd>=target*.8?sentenceEnd+1:full.lastIndexOf(' ',target);return full.slice(0,cut>0?cut:target).trim();}
-export const storySections:Record<string,string>={city:'News',music:'Culture',sport:'Sport',life:'Lifestyle',culture:'Arts',local:'Community',weekend:'Travel',last:'Perspective'};
+export function articlePreview(story:Story,ratio=.4){const full=story.expandedBody;const target=Math.floor(full.length*ratio);const sentenceEnd=full.lastIndexOf('. ',target);const cut=sentenceEnd>=target*.8?sentenceEnd+1:full.lastIndexOf(' ',target);return full.slice(0,cut>0?cut:target).trim();}
+export const storySections:Record<string,string>={
+  city:'News',music:'Culture',sport:'Sport',life:'Lifestyle',culture:'Arts',local:'Community',weekend:'Travel',last:'Perspective',
+  'night-market':'Food','rooftop-garden':'Lifestyle','cinema-club':'Culture','cafe-table':'Community',
+  'repair-club':'Technology','quiet-phone':'Technology','borrow-a-bike':'Technology','family-archive':'Technology',
+  'floodlit-fridays':'Football','away-day':'Football','first-five-k':'Running','kit-room':'Sport',
+  'after-dark':'Arts','river-walk':'Outdoors','supper-club':'Food','last-train':'Community',
+  'market-hall':'Local news','bus-route':'Transport','high-street':'Business','water-watch':'Environment',
+  'local-newsletter':'Publishing','honest-ad':'Marketing','audio-stories':'Media','small-brands':'Advertising',
+};
 export function youtubeEmbed(videoId:string){const origin=encodeURIComponent(window.location.origin);return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&disablekb=1&fs=0&iv_load_policy=3&playsinline=1&rel=0&enablejsapi=1&origin=${origin}&widget_referrer=${origin}`;}
 export const asset=(p:string)=>`${readerContext.assetBase || import.meta.env.BASE_URL}images/${p}`;
 export const storyVideos:Record<string,string>={'brightwire:music':'CftLBPI1Ga4','evening-lantern:life':'JTHRGI2h45U'};

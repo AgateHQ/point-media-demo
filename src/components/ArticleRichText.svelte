@@ -1,8 +1,9 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import type { RichTextDocument, RichTextNode } from '../editionContent';
   import { contentHref } from '../readerMedia';
   import ResponsiveImage from './ResponsiveImage.svelte';
-  let { document }: { document: RichTextDocument } = $props();
+  let { document, midpoint }: { document: RichTextDocument; midpoint?: Snippet } = $props();
 
   function link(node: RichTextNode) {
     const fields = node.fields || {};
@@ -13,8 +14,8 @@
   }
 </script>
 
-{#snippet nodes(items: RichTextNode[])}
-  {#each items as node}
+{#snippet nodes(items: RichTextNode[], includeMidpoint = false)}
+  {#each items as node, index}
     {#if node.type === 'text'}
       {@const format = typeof node.format === 'number' ? node.format : 0}
       <span class:rich-bold={!!(format & 1)} class:rich-italic={!!(format & 2)} class:rich-strike={!!(format & 4)} class:rich-underline={!!(format & 8)} class:rich-code={!!(format & 16)} class:rich-sub={!!(format & 32)} class:rich-sup={!!(format & 64)}>{node.text || ''}</span>
@@ -44,7 +45,9 @@
     {:else if node.type === 'tablerow'}<tr>{@render nodes(node.children || [])}</tr>
     {:else if node.type === 'tablecell'}<td>{@render nodes(node.children || [])}</td>
     {:else if node.children}{@render nodes(node.children)}{/if}
+    {#if includeMidpoint && midpoint && index === Math.ceil(items.length / 2) - 1}{@render midpoint()}{/if}
   {/each}
+  {#if includeMidpoint && midpoint && !items.length}{@render midpoint()}{/if}
 {/snippet}
 
-<div class="article-rich-text">{@render nodes(document.root.children || [])}</div>
+<div class="article-rich-text">{@render nodes(document.root.children || [], true)}</div>
