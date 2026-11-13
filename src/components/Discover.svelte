@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { readerContext, storyVideos } from '../data';
+  import { youtubeVideoId } from '../readerMedia';
   import { demo } from '../demo.svelte';
   import { discoverPublications, fetchDiscoverArticles, localDiscoverArticles, shuffleDiscoverArticles, type DiscoverArticle, type DiscoverPublication } from '../discover';
   import { motionDelay, prefersReducedMotion, reducedMotionPreference } from '../motion';
@@ -192,7 +193,7 @@
     {#if Math.abs(rel) <= 1}
       {@const activeCard = rel === 0}
       {@const title = story.title.replace(/\n/g, ' ')}
-      {@const video = storyVideos[`${p.id}:${story.id}`]}
+      {@const video = youtubeVideoId(story.videoUrl) || storyVideos[`${p.id}:${story.id}`]}
       <article class={`discover-card ${activeCard ? outgoing : ''}`} class:active={activeCard} class:dragging={activeCard && dragging}
         data-pub={p.id} data-story-id={story.id} aria-hidden={!activeCard}
         style={`--rel:${rel};--abs-rel:${Math.abs(rel)};--pub-accent:${p.brand};--pub-button-accent:${p.accent};--pub-bg:${p.color};--pub-ink:${p.ink};--pub-brand-ink:${p.brandInk};z-index:${activeCard ? 10 : 4};--drag-x:${activeCard ? dragX : 0}px;--drag-y:${activeCard ? dragY : 0}px;--drag-rotate:${activeCard ? dragRotate : 0}deg`}>

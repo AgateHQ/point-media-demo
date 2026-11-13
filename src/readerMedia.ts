@@ -26,6 +26,10 @@ export function previewVideo(value: string | null | undefined): PreviewVideo | n
   return { type: /\.(mp4|webm|ogv|ogg)$/i.test(url.pathname) ? 'file' : 'link', url: url.href };
 }
 
+export function youtubeVideoId(value: string | null | undefined): string | undefined {
+  return previewVideo(value)?.url.match(/^https:\/\/www\.youtube-nocookie\.com\/embed\/([\w-]{11})$/)?.[1];
+}
+
 export function contentHref(collection: string, value: unknown): string {
   const doc = value && typeof value === 'object' ? value as { id?: number | string; url?: string } : null;
   const id = doc?.id ?? value;

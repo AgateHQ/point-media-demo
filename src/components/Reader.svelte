@@ -30,6 +30,7 @@
   const rewardOnArrival = untrack(() => demo.data.reward);
   let pauseForHalfway = $derived(!ad && index === halfway.target - 1 && halfway.reached && !halfwayOnArrival);
   let videoId = $derived(!ad ? storyVideos[`${pub.id}:${story.id}`] : '');
+  let hasVideo = $derived(!!story.videoUrl || !!videoId);
   let parts = $derived((expanded ? story.expandedBody : articlePreview(story, pub.previewRatio)).split('\n\n'));
   let newsletterPosition = $derived(Math.ceil((parts.length + 1) / 2));
   let section = $derived(storySections[story.id] || 'News');
@@ -92,6 +93,19 @@
   });
 </script>
 
+{#snippet articleMedia()}
+  <figure class="article-figure" class:article-video-lead={hasVideo}>
+    <div class="article-media">
+      {#if story.videoUrl}<StoryVideo url={story.videoUrl} title={`Video: ${story.title}`} />{:else}
+      <ResponsiveImage class={`article-image${videoId ? ' video-fallback' : ''}`} image={story.image as keyof typeof imageAssets}
+        alt={story.imageAlt || story.title.replace(/\n/g, ' ')} sizes="(max-width: 430px) calc(100vw - 42px), 388px" priority="high" />
+      {#if videoId}<BackgroundVideo id={videoId} title={`Background video for ${story.title.replace('\n', ' ')}`} />{/if}
+      {/if}
+    </div>
+    <figcaption><span>{section} · {pub.name}</span><span>{hasVideo ? 'Video' : story.richText ? story.imageAlt || '' : 'Photo: Alexander London'}</span></figcaption>
+  </figure>
+{/snippet}
+
 {#if ad}
   <section class="story-visual sponsored-visual">
     <ResponsiveImage class="story-image" image="20260603-R0000419" alt="Sponsored content" priority="high" />
@@ -124,6 +138,7 @@
       </button>
     </div>
     <EditionCard {story} number={index + 1} total={getStories().length} {collected}>
+    {#if hasVideo}{@render articleMedia()}{/if}
     <header class="article-head">
       <div class="article-kicker">
         <span class="article-label">{#if pub.id === 'the-scoop'}<span aria-hidden="true">★</span>{/if}{story.tag}</span>
@@ -131,18 +146,9 @@
       </div>
       <h1>{story.title.replace(/\n/g, ' ')}</h1>
       {#if story.subtitle}<p class="standfirst">{story.subtitle}</p>{/if}
-      <div class="article-byline"><span><strong>By {pub.name} team</strong><span class="byline-desk"> · {section}</span></span><time datetime={date}>{dateLabel}</time></div>
+      <div class="article-byline"><span><strong>By {story.author || `${pub.name} team`}</strong><span class="byline-desk"> · {story.authorRole || section}</span></span><time datetime={date}>{dateLabel}</time></div>
     </header>
-    <figure class="article-figure">
-      <div class="article-media">
-        {#if story.videoUrl}<StoryVideo url={story.videoUrl} title={`Video: ${story.title}`} />{:else}
-        <ResponsiveImage class={`article-image${videoId ? ' video-fallback' : ''}`} image={story.image as keyof typeof imageAssets}
-          alt={story.imageAlt || story.title.replace(/\n/g, ' ')} sizes="(max-width: 430px) calc(100vw - 42px), 388px" priority="high" />
-        {#if videoId}<BackgroundVideo id={videoId} title={`Background video for ${story.title.replace('\n', ' ')}`} />{/if}
-        {/if}
-      </div>
-      <figcaption><span>{section} · {pub.name}</span><span>{story.videoUrl ? 'Video' : story.richText ? story.imageAlt || '' : 'Photo: Alexander London'}</span></figcaption>
-    </figure>
+    {#if !hasVideo}{@render articleMedia()}{/if}
     </EditionCard>
     <div class="article-copy">
       {#if story.richText}

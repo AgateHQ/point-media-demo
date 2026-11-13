@@ -3,7 +3,7 @@ import type { PublicDiscoverArticle } from './editionContent';
 import { publicationTheme } from './publicationTheme';
 
 export interface DiscoverArticle {
-  story: Pick<Story, 'id' | 'title' | 'tag' | 'image'>;
+  story: Pick<Story, 'id' | 'title' | 'tag' | 'image' | 'videoUrl'>;
   publication: Publication;
   href?: string;
 }
