@@ -1,6 +1,7 @@
-import { publications, readerContext, stories, type Publication, type Story } from './data';
+import { publications, readerContext, stories, storyVideos, type Publication, type Story } from './data';
 import type { PublicDiscoverArticle } from './editionContent';
 import { publicationTheme } from './publicationTheme';
+import { youtubeVideoId } from './readerMedia';
 
 export interface DiscoverArticle {
   story: Pick<Story, 'id' | 'title' | 'tag' | 'image' | 'videoUrl'>;
@@ -62,11 +63,22 @@ export async function fetchDiscoverArticles(signal: AbortSignal): Promise<Discov
     }));
 }
 
+export function discoverVideoId({ story, publication }: DiscoverArticle) {
+  return youtubeVideoId(story.videoUrl) || storyVideos[`${publication.id}:${story.id}`];
+}
+
 export function shuffleDiscoverArticles(articles: DiscoverArticle[]) {
   const shuffled = [...articles];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return shuffled;
+  const videos = shuffled.filter(article => discoverVideoId(article));
+  const images = shuffled.filter(article => !discoverVideoId(article));
+  const alternating: DiscoverArticle[] = [];
+  for (let i = 0; i < Math.max(videos.length, images.length); i++) {
+    if (videos[i]) alternating.push(videos[i]);
+    if (images[i]) alternating.push(images[i]);
+  }
+  return alternating;
 }

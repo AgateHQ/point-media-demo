@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { readerContext, storyVideos } from '../data';
-  import { youtubeVideoId } from '../readerMedia';
+  import { readerContext } from '../data';
   import { demo } from '../demo.svelte';
-  import { discoverPublications, fetchDiscoverArticles, localDiscoverArticles, shuffleDiscoverArticles, type DiscoverArticle, type DiscoverPublication } from '../discover';
+  import { discoverPublications, discoverVideoId, fetchDiscoverArticles, localDiscoverArticles, shuffleDiscoverArticles, type DiscoverArticle, type DiscoverPublication } from '../discover';
   import { motionDelay, prefersReducedMotion, reducedMotionPreference } from '../motion';
   import Icon from './Icon.svelte';
   import ResponsiveImage from './ResponsiveImage.svelte';
@@ -193,9 +192,9 @@
     {#if Math.abs(rel) <= 1}
       {@const activeCard = rel === 0}
       {@const title = story.title.replace(/\n/g, ' ')}
-      {@const video = youtubeVideoId(story.videoUrl) || storyVideos[`${p.id}:${story.id}`]}
+      {@const video = discoverVideoId({ story, publication: p })}
       <article class={`discover-card ${activeCard ? outgoing : ''}`} class:active={activeCard} class:dragging={activeCard && dragging}
-        data-pub={p.id} data-story-id={story.id} aria-hidden={!activeCard}
+        data-pub={p.id} data-story-id={story.id} data-media={video ? 'video' : 'image'} aria-hidden={!activeCard}
         style={`--rel:${rel};--abs-rel:${Math.abs(rel)};--pub-accent:${p.brand};--pub-button-accent:${p.accent};--pub-bg:${p.color};--pub-ink:${p.ink};--pub-brand-ink:${p.brandInk};z-index:${activeCard ? 10 : 4};--drag-x:${activeCard ? dragX : 0}px;--drag-y:${activeCard ? dragY : 0}px;--drag-rotate:${activeCard ? dragRotate : 0}deg`}>
         {#if story.image}<ResponsiveImage class="discover-card-image" image={story.image} alt="" sizes="(max-width: 430px) calc(100vw - 30px), 400px" priority={activeCard ? 'high' : 'low'} />{/if}
         {#if video && activeCard}<BackgroundVideo id={video} title={`Video background for ${title}`} kind="discover" />{/if}
