@@ -36,6 +36,7 @@ export interface PublicDiscoverArticle {
   id: string;
   title: string;
   imageUrl?: string;
+  videoUrl?: string;
   publication: { slug: string; name: string; brandColor?: string; logoUrl?: string };
 }
 

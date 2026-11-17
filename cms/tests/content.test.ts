@@ -99,6 +99,10 @@ test('open editorial workflow persists media, publications, editions, and articl
     const imageCard = discover.find(article => article.title === 'Image story');
     assert.equal(imageCard?.id, saved.articles?.[1].id);
     assert.equal(imageCard?.imageUrl, image.url);
+    assert.equal(imageCard?.videoUrl, undefined);
+    const videoCard = discover.find(article => article.title === 'Video story');
+    assert.equal(videoCard?.videoUrl, 'https://example.com/story.mp4');
+    assert.equal(videoCard?.imageUrl, undefined);
     await payload.delete({ collection: 'editions', id: older.id });
     await payload.delete({ collection: 'editions', id: other.id });
     await payload.delete({ collection: 'editions', id: future.id });

@@ -53,8 +53,8 @@ export async function fetchDiscoverArticles(signal: AbortSignal): Promise<Discov
   if (!response.ok) throw new Error('Could not load Discover articles');
   const articles: PublicDiscoverArticle[] = await response.json();
   return articles.filter(({ publication }) => publication.slug !== readerContext.edition?.publication.slug)
-    .map(({ id, title, imageUrl, publication }) => ({
-      story: { id, title, tag: '', image: imageUrl || '' },
+    .map(({ id, title, imageUrl, videoUrl, publication }) => ({
+      story: { id, title, tag: '', image: imageUrl || '', videoUrl },
       publication: {
         ...publicationTheme(publication.brandColor),
         id: publication.slug, name: publication.name, subtitle: '', storyOrder: [], logoUrl: publication.logoUrl, theme: 'cms',
@@ -75,10 +75,13 @@ export function shuffleDiscoverArticles(articles: DiscoverArticle[]) {
   }
   const videos = shuffled.filter(article => discoverVideoId(article));
   const images = shuffled.filter(article => !discoverVideoId(article));
+  if (!videos.length || !images.length) return shuffled;
+
   const alternating: DiscoverArticle[] = [];
+  // Repeat the smaller pool so every story stays available and the loop
+  // remains video/image even when the catalog has an uneven mix.
   for (let i = 0; i < Math.max(videos.length, images.length); i++) {
-    if (videos[i]) alternating.push(videos[i]);
-    if (images[i]) alternating.push(images[i]);
+    alternating.push(videos[i % videos.length], images[i % images.length]);
   }
   return alternating;
 }

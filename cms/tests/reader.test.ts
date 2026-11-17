@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { editionNavigation, richTextPreview, richTextText, type RichTextDocument } from '../../src/editionContent';
-import { discoverVideoId, localDiscoverArticles, shuffleDiscoverArticles } from '../../src/discover';
+import { discoverVideoId, fetchDiscoverArticles, localDiscoverArticles, shuffleDiscoverArticles } from '../../src/discover';
 
 test('Discover alternates video and image covers through the whole demo loop without losing stories', () => {
   const catalog = localDiscoverArticles();
@@ -20,15 +20,45 @@ test('Discover alternates video and image covers through the whole demo loop wit
   assert.deepEqual(catalog.map(article => article.story.id), originalOrder, 'shuffling leaves the source catalog intact');
 });
 
-test('Discover keeps every article when an edition has only one media type or an uneven mix', () => {
+test('Discover keeps every article when an edition has only one media type', () => {
   const catalog = localDiscoverArticles();
-  const video = catalog.find(article => discoverVideoId(article))!;
+  const videos = catalog.filter(article => discoverVideoId(article));
   const images = catalog.filter(article => !discoverVideoId(article));
-  for (const subset of [[], [video], images, [video, ...images.slice(0, 3)]]) {
+  for (const subset of [[], [videos[0]], [images[0]], videos, images]) {
     const deck = shuffleDiscoverArticles(subset);
     assert.equal(deck.length, subset.length);
     assert.deepEqual(new Set(deck), new Set(subset));
   }
+});
+
+test('Discover alternates across uneven catalogs and the loop boundary without losing articles', () => {
+  const catalog = localDiscoverArticles();
+  const videos = catalog.filter(article => discoverVideoId(article));
+  const images = catalog.filter(article => !discoverVideoId(article));
+  for (const [videoCount, imageCount] of [[1, 3], [3, 1], [2, 5], [5, 2]]) {
+    const subset = [...videos.slice(0, videoCount), ...images.slice(0, imageCount)];
+    for (let run = 0; run < 10; run++) {
+      const deck = shuffleDiscoverArticles(subset);
+      assert.equal(deck.length, 2 * Math.max(videoCount, imageCount));
+      assert.deepEqual(new Set(deck), new Set(subset));
+      deck.forEach((article, index) => {
+        assert.equal(!!discoverVideoId(article), index % 2 === 0, `card ${index + 1}`);
+        assert.notEqual(!!discoverVideoId(article), !!discoverVideoId(deck[(index + 1) % deck.length]));
+        assert.notEqual(!!discoverVideoId(article), !!discoverVideoId(deck[(index - 1 + deck.length) % deck.length]));
+      });
+    }
+  }
+});
+
+test('Discover preserves published video links when loading the network catalog', async t => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json([{
+    id: 'network-video', title: 'Published video', videoUrl: 'https://youtu.be/CftLBPI1Ga4',
+    publication: { slug: 'network-publication', name: 'Network publication' },
+  }]));
+  const articles = await fetchDiscoverArticles(new AbortController().signal);
+  assert.equal(articles.length, 1);
+  assert.equal(articles[0].story.videoUrl, 'https://youtu.be/CftLBPI1Ga4');
+  assert.equal(discoverVideoId(articles[0]), 'CftLBPI1Ga4');
 });
 
 test('reader navigation maps arbitrary edition lengths around a single partner moment', () => {

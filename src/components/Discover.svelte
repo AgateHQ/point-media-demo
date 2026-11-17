@@ -187,7 +187,7 @@
   <PublicationBookshelf {editions} disabled={!!outgoing} onselect={enterPublication} />
 {:else}
 <div class="discover-deck" aria-live="polite" use:gestures>
-  {#each articles as { story, publication: p, href }, i (href || story.id)}
+  {#each articles as { story, publication: p, href }, i (`${href || story.id}:${i}`)}
     {@const rel = relative(i)}
     {#if Math.abs(rel) <= 1}
       {@const activeCard = rel === 0}
@@ -196,7 +196,7 @@
       <article class={`discover-card ${activeCard ? outgoing : ''}`} class:active={activeCard} class:dragging={activeCard && dragging}
         data-pub={p.id} data-story-id={story.id} data-media={video ? 'video' : 'image'} aria-hidden={!activeCard}
         style={`--rel:${rel};--abs-rel:${Math.abs(rel)};--pub-accent:${p.brand};--pub-button-accent:${p.accent};--pub-bg:${p.color};--pub-ink:${p.ink};--pub-brand-ink:${p.brandInk};z-index:${activeCard ? 10 : 4};--drag-x:${activeCard ? dragX : 0}px;--drag-y:${activeCard ? dragY : 0}px;--drag-rotate:${activeCard ? dragRotate : 0}deg`}>
-        {#if story.image}<ResponsiveImage class="discover-card-image" image={story.image} alt="" sizes="(max-width: 430px) calc(100vw - 30px), 400px" priority={activeCard ? 'high' : 'low'} />{/if}
+        {#if !video && story.image}<ResponsiveImage class="discover-card-image" image={story.image} alt="" sizes="(max-width: 430px) calc(100vw - 30px), 400px" priority={activeCard ? 'high' : 'low'} />{/if}
         {#if video && activeCard}<BackgroundVideo id={video} title={`Video background for ${title}`} kind="discover" />{/if}
         <div class="discover-card-shade"></div>
         <div class="discover-card-top"><span class="discover-logo"><PublicationLogo publication={p} variant="icon" decorative /></span><span>{p.name}</span></div>
@@ -217,7 +217,7 @@
     <button onclick={() => move(-1)} aria-label="Previous article"><Icon /></button>
     <select aria-label="Jump to an article" value={index} disabled={!!outgoing}
       onchange={event => { resetDrag(); index = event.currentTarget.selectedIndex; }}>
-      {#each articles as { story, publication, href }, i (href || story.id)}
+      {#each articles as { story, publication, href }, i (`${href || story.id}:${i}`)}
         <option value={i}>{story.title.replace(/\n/g, ' ')} · {publication.name}</option>
       {/each}
     </select>
